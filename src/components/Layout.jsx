@@ -5,6 +5,7 @@ const tabs = [
   { to: '/', label: '홈', icon: '🏠', end: true },
   { to: '/calendar', label: '달력', icon: '📅', end: false },
   { to: '/todo', label: '투두', icon: '✅', end: false },
+  { to: '/settings', label: '설정', icon: '⚙️', end: false },
 ]
 
 export default function Layout() {
@@ -12,6 +13,12 @@ export default function Layout() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-love-50">
+      {mode === 'local' && (
+        <div className="bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-amber-950">
+          🧪 테스트 모드 — 이 기기에만 저장돼요 (연인과 공유 안 됨)
+        </div>
+      )}
+
       <header className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3">
         <div className="text-sm font-medium text-love-700">
           {authorName ? `${authorName} 님` : ''}

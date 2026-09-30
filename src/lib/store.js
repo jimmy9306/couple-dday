@@ -252,3 +252,23 @@ export async function deleteTodo(id) {
     todos.filter((t) => t.id !== id)
   )
 }
+
+// ---------------------------------------------------------------------------
+// realtime: 상대방이 추가/수정/삭제하면 콜백을 호출해서 화면을 새로고침 없이 갱신
+// (localStorage 모드는 이 기기 하나뿐이라 구독할 게 없음 -> no-op)
+// ---------------------------------------------------------------------------
+
+export function subscribeToChanges(onChange) {
+  if (!isSupabaseEnabled) return () => {}
+
+  const channel = supabase
+    .channel('dday-shared-data')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'relationship' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'date_records' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'todos' }, onChange)
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}

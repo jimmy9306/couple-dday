@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getRelationship, setStartDate } from '../lib/store'
+import { getRelationship, setStartDate, subscribeToChanges } from '../lib/store'
 import { getDayCount, getUpcomingAnniversaries } from '../lib/date-utils'
 
 function StartDateSetup({ onSaved }) {
@@ -25,7 +25,7 @@ function StartDateSetup({ onSaved }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 pt-24 text-center">
       <div className="text-4xl">📅</div>
-      <h2 className="text-lg font-bold text-love-700">사귄 날짜를 알려주세요</h2>
+      <h2 className="text-lg font-bold text-love-700">만난 날을 입력해주세요</h2>
       <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-3">
         <input
           type="date"
@@ -55,7 +55,6 @@ export default function Main() {
   const [error, setError] = useState('')
 
   const load = async () => {
-    setLoading(true)
     setError('')
     try {
       const rel = await getRelationship()
@@ -75,6 +74,8 @@ export default function Main() {
 
   useEffect(() => {
     load()
+    const unsubscribe = subscribeToChanges(() => load())
+    return unsubscribe
   }, [])
 
   if (loading) {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { addTodo, deleteTodo, listTodos, toggleTodo } from '../lib/store'
+import { addTodo, deleteTodo, listTodos, subscribeToChanges, toggleTodo } from '../lib/store'
 
 export default function Todo() {
   const { authorName } = useAuth()
@@ -10,13 +10,14 @@ export default function Todo() {
   const [busy, setBusy] = useState(false)
 
   const load = async () => {
-    setLoading(true)
     setTodos(await listTodos())
     setLoading(false)
   }
 
   useEffect(() => {
     load()
+    const unsubscribe = subscribeToChanges(() => load())
+    return unsubscribe
   }, [])
 
   const handleAdd = async (e) => {

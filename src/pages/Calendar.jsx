@@ -12,7 +12,7 @@ import {
   subMonths,
 } from 'date-fns'
 import { useAuth } from '../lib/AuthContext'
-import { getRelationship, listDateRecords } from '../lib/store'
+import { getRelationship, listDateRecords, subscribeToChanges } from '../lib/store'
 import { getAnniversaryLabelForDate } from '../lib/date-utils'
 import DateRecordModal from '../components/DateRecordModal'
 
@@ -27,7 +27,6 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true)
 
   const load = async () => {
-    setLoading(true)
     const [rel, recs] = await Promise.all([getRelationship(), listDateRecords()])
     setStartDate(rel?.startDate || null)
     setRecords(recs)
@@ -36,6 +35,8 @@ export default function Calendar() {
 
   useEffect(() => {
     load()
+    const unsubscribe = subscribeToChanges(() => load())
+    return unsubscribe
   }, [])
 
   const recordsByDate = useMemo(() => {
