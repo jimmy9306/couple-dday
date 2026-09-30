@@ -56,3 +56,23 @@
 - [x] 35. 390×844(모바일) 뷰포트로 로컬 모드에서 전체 화면(메뉴/디데이/달력/투두/기념일/설정/기록모달) 실물 확인 완료 — 검증용으로 `/Users/jimmy/JUSIK/.claude/launch.json`을 임시로 다시 만들었다가 검증 끝나고 즉시 재삭제함(지시사항 유지).
 - [x] 36. `npm run build` 최종 성공 확인.
 - [x] 37. 단계별 커밋 진행.
+
+## 4차 수정 요청 (2026-09-30) — "파스텔 핑크 픽셀 RPG" 리디자인 (네온/글로우 전부 제거)
+
+- [x] 38. `npm i galmuri` 설치, `main.jsx`에서 `galmuri/dist/galmuri.css` import.
+- [x] 39. `tailwind.config.js` — `love-*` 팔레트 삭제, `pastel.{bg,box,accent,border,text}` 5색 고정 팔레트로 교체. `fontFamily.title`(Galmuri14)/`fontFamily.body`(Galmuri11) 추가.
+- [x] 40. `index.css` 전면 재작성 — 네온/글로우 유틸리티(frame-glow/text-glow) 전부 삭제. `* { border-radius:0 !important }` 강제, `pixel-btn`/`pixel-tile`(눌림 효과 2px+그림자 제거), `pixel-cursor`(깜빡이는 ▶), `pixel-clear-flash`(CLEAR! 팝 애니메이션) 추가.
+- [x] 41. `src/components/PixelPanel.jsx` 신규 — clip-path 계단식 모서리 + `filter:drop-shadow(4px 4px 0 #D6457A)` 하드 섀도우 패널 (모든 화면 카드에 공통 사용).
+- [x] 42. `src/components/icons.jsx` 전면 재작성 — 16x16 픽셀 그리드 기반 진짜 픽셀아트로 하트/달력/체크/선물/톱니 다시 그림 (`shape-rendering:crispEdges` + `image-rendering:pixelated`).
+- [x] 43. `src/lib/date-utils.js`에 `getLoveGaugeProgress()` 추가 (직전↔다음 마일스톤 진행률 0~1 계산, LOVE 게이지용).
+- [x] 44. `src/pages/Menu.jsx` → `src/pages/Home.jsx`로 교체 — LOVE QUEST 타이틀+하트 2개, RPG 대화창(만난 지 N일째) + LOVE 게이지(HP바 10칸) + 다음 기념일 D-day, RPG 메뉴(▶ 깜빡이는 커서, 디데이/달력/투두/설정 4개, 탭 시 260ms 후 이동).
+- [x] 45. `src/pages/DDay.jsx` 재작성 — 픽셀 스타일 + 이전에 분리했던 "다가오는 기념일" 목록을 다시 합쳐 넣음(선물 아이콘과 함께). 만난 날 미입력 시 입력 폼 로직은 그대로 유지.
+- [x] 46. `src/pages/Anniversaries.jsx` 삭제 (내용은 DDay.jsx로 이관, 기능 손실 없음), `App.jsx` 라우트 갱신(Home/DDay/Calendar/Todo/Settings 5개, 기념일 라우트 제거).
+- [x] 47. `Layout.jsx` 하단 탭 5개(홈/디데이/달력/투두/설정)로 축소 + 픽셀 스타일 재적용, 로컬모드 배지 픽셀화.
+- [x] 48. `Calendar.jsx` — 날짜 칸을 픽셀 타일로, 기념일 칸엔 하트 아이콘 오버레이, 기록 있는 날은 작은 점. 월 그리드/기념일 목록 PixelPanel로 통일.
+- [x] 49. `Todo.jsx` — 체크박스를 픽셀 네모(+픽셀 체크 아이콘)로, 완료 체크 시 "CLEAR!" 0.9초 플래시 배지 추가.
+- [x] 50. `Settings.jsx`/`Login.jsx`/`DateRecordModal.jsx`/`App.jsx`(NotAllowed/로딩 화면) 전부 픽셀 스타일로 통일, LOVE QUEST 타이틀로 로그인 화면도 맞춤.
+- [x] 51. `vite.config.js` — PWA manifest theme_color/background_color를 새 팔레트로 갱신, galmuri 미사용 굵기(7/9/Mono/Bold/Condensed) + 모든 `.ttf`를 workbox `globIgnores`로 오프라인 캐시에서 제외 (프리캐시 3.8MB → 1.5MB로 축소, DECISIONS.md 12번 참고).
+- [x] 52. 390×844 로컬 모드 실물 확인 — 홈(LOVE QUEST 메뉴+게이지+커서), 디데이(기념일 목록 포함), 달력(픽셀 타일/기념일 하트/기록 점), 투두(픽셀 체크박스, 토글 정상 — 자동화 도구의 좌표 클릭이 간헐적으로 안 먹혀서 JS로 직접 dispatch해서 재확인함, 실제 앱 버그 아님), 설정, 날짜기록모달까지 전부 확인. 검증용 launch.json은 테스트 후 즉시 재삭제.
+- [x] 53. `npm run build` 최종 성공 확인.
+- [x] 54. 단계별 커밋 진행.

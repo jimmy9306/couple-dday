@@ -1,68 +1,134 @@
-// 레트로 메뉴판용 심플 라인 아이콘. 전부 stroke 기반 직접 제작 (외부 아이콘셋 미사용).
+// 16x16 픽셀 그리드로 직접 그린 라인업(하트/달력/체크/선물/톱니).
+// 외부 아이콘셋 미사용. shape-rendering:crispEdges + image-rendering:pixelated로 각진 픽셀 유지.
 
-const base = {
-  viewBox: '0 0 32 32',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 2.2,
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
+const SIZE = 16
+
+function emptyGrid() {
+  return Array.from({ length: SIZE }, () => Array(SIZE).fill(0))
 }
 
-export function HeartIcon({ className }) {
+function fillRect(grid, x0, y0, x1, y1) {
+  for (let y = y0; y <= y1; y += 1) {
+    for (let x = x0; x <= x1; x += 1) {
+      if (grid[y] && x >= 0 && x < SIZE) grid[y][x] = 1
+    }
+  }
+}
+
+function strokeRect(grid, x0, y0, x1, y1) {
+  fillRect(grid, x0, y0, x1, y0)
+  fillRect(grid, x0, y1, x1, y1)
+  fillRect(grid, x0, y0, x0, y1)
+  fillRect(grid, x1, y0, x1, y1)
+}
+
+function setCells(grid, coords) {
+  coords.forEach(([x, y]) => {
+    if (grid[y] && x >= 0 && x < SIZE) grid[y][x] = 1
+  })
+}
+
+function gridFromRows(rows) {
+  return rows.map((row) => row.split('').map((ch) => (ch === '#' ? 1 : 0)))
+}
+
+function PixelIcon({ grid, className }) {
+  const cells = []
+  grid.forEach((row, y) => {
+    row.forEach((v, x) => {
+      if (v) cells.push(<rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" />)
+    })
+  })
   return (
-    <svg {...base} className={className}>
-      <path d="M16 27.5S4.5 20 4.5 12.2C4.5 8.2 7.6 5 11.4 5c2.3 0 4.3 1.2 4.6 3 0.3-1.8 2.3-3 4.6-3 3.8 0 6.9 3.2 6.9 7.2 0 7.8-11.5 15.3-11.5 15.3z" />
+    <svg
+      viewBox={`0 0 ${SIZE} ${SIZE}`}
+      className={className}
+      fill="currentColor"
+      shapeRendering="crispEdges"
+      style={{ imageRendering: 'pixelated' }}
+    >
+      {cells}
     </svg>
   )
+}
+
+const HEART_ROWS = [
+  '................',
+  '..###......###..',
+  '.######..######.',
+  '.##############.',
+  '.##############.',
+  '..############..',
+  '...##########...',
+  '....########....',
+  '.....######.....',
+  '......####......',
+  '.......##.......',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+]
+
+export function HeartIcon({ className }) {
+  return <PixelIcon grid={gridFromRows(HEART_ROWS)} className={className} />
 }
 
 export function CalendarIcon({ className }) {
-  return (
-    <svg {...base} className={className}>
-      <rect x="5" y="8" width="22" height="19" rx="3" />
-      <line x1="5" y1="13.5" x2="27" y2="13.5" />
-      <line x1="11" y1="5" x2="11" y2="10" />
-      <line x1="21" y1="5" x2="21" y2="10" />
-    </svg>
-  )
+  const grid = emptyGrid()
+  strokeRect(grid, 1, 3, 14, 14)
+  fillRect(grid, 1, 5, 14, 5)
+  fillRect(grid, 4, 1, 5, 2)
+  fillRect(grid, 10, 1, 11, 2)
+  return <PixelIcon grid={grid} className={className} />
 }
 
 export function CheckIcon({ className }) {
-  return (
-    <svg {...base} className={className}>
-      <rect x="5" y="5" width="22" height="22" rx="6" />
-      <path d="M10 17l4.3 4.3L22.5 12.5" />
-    </svg>
-  )
+  const grid = emptyGrid()
+  strokeRect(grid, 1, 1, 14, 14)
+  setCells(grid, [
+    [3, 8],
+    [4, 9],
+    [5, 10],
+    [6, 11],
+    [7, 10],
+    [8, 9],
+    [9, 8],
+    [10, 7],
+    [11, 6],
+    [12, 5],
+  ])
+  return <PixelIcon grid={grid} className={className} />
 }
 
 export function GiftIcon({ className }) {
-  return (
-    <svg {...base} className={className}>
-      <rect x="5" y="13.5" width="22" height="13.5" rx="2" />
-      <line x1="5" y1="18.5" x2="27" y2="18.5" />
-      <line x1="16" y1="13.5" x2="16" y2="27" />
-      <path d="M16 13.5c-1.6-5-8.4-5.2-7.6-1.3 0.4 2 3.9 1.8 7.6 1.3z" />
-      <path d="M16 13.5c1.6-5 8.4-5.2 7.6-1.3-0.4 2-3.9 1.8-7.6 1.3z" />
-    </svg>
-  )
+  const grid = emptyGrid()
+  strokeRect(grid, 2, 7, 13, 14)
+  fillRect(grid, 1, 5, 14, 6)
+  fillRect(grid, 7, 5, 8, 14)
+  fillRect(grid, 4, 2, 6, 4)
+  fillRect(grid, 9, 2, 11, 4)
+  fillRect(grid, 7, 3, 8, 4)
+  return <PixelIcon grid={grid} className={className} />
 }
 
 export function GearIcon({ className }) {
-  const teeth = Array.from({ length: 8 })
-  return (
-    <svg {...base} className={className}>
-      <circle cx="16" cy="16" r="6.2" />
-      {teeth.map((_, i) => {
-        const angle = (i * 360) / teeth.length
-        const rad = (angle * Math.PI) / 180
-        const x1 = 16 + 8.6 * Math.cos(rad)
-        const y1 = 16 + 8.6 * Math.sin(rad)
-        const x2 = 16 + 13 * Math.cos(rad)
-        const y2 = 16 + 13 * Math.sin(rad)
-        return <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} />
-      })}
-    </svg>
-  )
+  const grid = emptyGrid()
+  strokeRect(grid, 4, 4, 11, 11)
+  fillRect(grid, 7, 0, 8, 2)
+  fillRect(grid, 7, 13, 8, 15)
+  fillRect(grid, 0, 7, 2, 8)
+  fillRect(grid, 13, 7, 15, 8)
+  setCells(grid, [
+    [2, 2],
+    [3, 3],
+    [12, 2],
+    [12, 3],
+    [2, 13],
+    [3, 12],
+    [12, 13],
+    [12, 12],
+  ])
+  return <PixelIcon grid={grid} className={className} />
 }

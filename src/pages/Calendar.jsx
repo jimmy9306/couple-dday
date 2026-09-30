@@ -15,6 +15,8 @@ import { useAuth } from '../lib/AuthContext'
 import { getRelationship, listDateRecords, subscribeToChanges } from '../lib/store'
 import { getAnniversaryLabelForDate } from '../lib/date-utils'
 import DateRecordModal from '../components/DateRecordModal'
+import PixelPanel from '../components/PixelPanel'
+import { HeartIcon } from '../components/icons'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -68,28 +70,26 @@ export default function Calendar() {
 
   return (
     <div className="pt-6">
-      <div className="frame-glow mb-4 p-4">
+      <PixelPanel className="mb-4" innerClassName="p-3">
         <div className="mb-3 flex items-center justify-between">
           <button
             type="button"
             onClick={() => setCursor((c) => subMonths(c, 1))}
-            className="rounded-full px-3 py-1.5 text-love-500"
+            className="pixel-btn font-title border-2 border-pastel-border bg-pastel-accent px-2 py-1 text-[11px] text-pastel-text"
           >
             ◀
           </button>
-          <h2 className="text-glow text-base font-bold text-love-700">
-            {format(cursor, 'yyyy년 M월')}
-          </h2>
+          <h2 className="font-title text-[14px] text-pastel-text">{format(cursor, 'yyyy년 M월')}</h2>
           <button
             type="button"
             onClick={() => setCursor((c) => addMonths(c, 1))}
-            className="rounded-full px-3 py-1.5 text-love-500"
+            className="pixel-btn font-title border-2 border-pastel-border bg-pastel-accent px-2 py-1 text-[11px] text-pastel-text"
           >
             ▶
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-y-1 text-center text-xs text-gray-400">
+        <div className="font-body grid grid-cols-7 gap-y-1 text-center text-[11px] text-pastel-text">
           {WEEKDAYS.map((w) => (
             <div key={w} className="py-1">
               {w}
@@ -97,7 +97,7 @@ export default function Calendar() {
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-y-1.5">
+        <div className="grid grid-cols-7 gap-1">
           {days.map((day) => {
             const dateStr = format(day, 'yyyy-MM-dd')
             const inMonth = isSameMonth(day, cursor)
@@ -111,25 +111,29 @@ export default function Calendar() {
                 type="button"
                 onClick={() => setSelectedDate(dateStr)}
                 disabled={loading}
-                className={`relative mx-auto flex h-11 w-11 flex-col items-center justify-center rounded-full text-sm ${
-                  inMonth ? 'text-gray-700' : 'text-gray-300'
+                className={`pixel-tile font-body relative mx-auto flex h-10 w-10 flex-col items-center justify-center border-2 text-[11px] ${
+                  inMonth ? 'text-pastel-text' : 'text-pastel-accent'
                 } ${
                   isToday(day)
-                    ? 'border-2 border-love-500 font-bold text-love-600 shadow-[0_0_10px_rgba(199,125,214,0.5)]'
-                    : ''
-                } ${anniversary ? 'bg-love-100' : ''}`}
+                    ? 'border-pastel-border bg-pastel-accent font-bold'
+                    : 'border-pastel-border bg-pastel-bg'
+                }`}
               >
-                {day.getDate()}
+                {anniversary ? (
+                  <HeartIcon className="h-4 w-4 text-pastel-border" />
+                ) : (
+                  <span>{day.getDate()}</span>
+                )}
                 {hasRecord && (
-                  <span className="absolute bottom-1 h-1 w-1 rounded-full bg-love-500" />
+                  <span className="absolute bottom-0.5 h-1 w-1 bg-pastel-border" />
                 )}
               </button>
             )
           })}
         </div>
-      </div>
+      </PixelPanel>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {days
           .filter((d) => isSameMonth(d, cursor) && startDate)
           .map((d) => {
@@ -137,14 +141,12 @@ export default function Calendar() {
             const label = startDate ? getAnniversaryLabelForDate(startDate, dateStr) : null
             if (!label) return null
             return (
-              <div
-                key={dateStr}
-                className="frame-glow flex items-center justify-between px-3.5 py-2 text-sm"
-              >
-                <span className="text-glow text-love-600">
-                  💗 {format(d, 'M월 d일')} · {label}
+              <PixelPanel key={dateStr} innerClassName="flex items-center gap-2 px-3 py-2">
+                <HeartIcon className="h-4 w-4 text-pastel-border" />
+                <span className="font-body text-[11px] text-pastel-text">
+                  {format(d, 'M월 d일')} · {label}
                 </span>
-              </div>
+              </PixelPanel>
             )
           })}
       </div>

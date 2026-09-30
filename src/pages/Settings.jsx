@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
 import { getRelationship, setStartDate } from '../lib/store'
+import PixelPanel from '../components/PixelPanel'
 
 export default function Settings() {
   const { authorName, updateDisplayName, mode } = useAuth()
@@ -60,12 +61,12 @@ export default function Settings() {
 
   return (
     <div className="flex flex-col gap-6 pt-6">
-      <h2 className="text-glow text-lg font-bold text-love-700">설정</h2>
+      <h2 className="font-title text-[14px] text-pastel-text">설정</h2>
 
-      <section className="frame-glow p-5">
-        <h3 className="text-glow mb-3 text-sm font-semibold text-love-700">만난 날</h3>
+      <PixelPanel innerClassName="p-5">
+        <h3 className="font-title mb-3 text-[14px] text-pastel-text">만난 날</h3>
         {dateLoading ? (
-          <p className="text-sm text-love-400">불러오는 중...</p>
+          <p className="font-body text-[11px] text-pastel-text">불러오는 중...</p>
         ) : (
           <form onSubmit={handleSaveDate} className="space-y-3">
             <input
@@ -76,24 +77,24 @@ export default function Settings() {
                 setDate(e.target.value)
                 setDateSaved(false)
               }}
-              className="w-full rounded-xl border border-love-200 px-4 py-3 text-sm outline-none focus:border-love-400"
+              className="font-body w-full border-2 border-pastel-border bg-pastel-bg px-3 py-2 text-[11px] text-pastel-text outline-none"
             />
-            {dateError && <p className="text-xs text-red-500">{dateError}</p>}
-            {dateSaved && <p className="text-xs text-love-600">저장했어요.</p>}
+            {dateError && <p className="font-body text-[11px] text-pastel-border">{dateError}</p>}
+            {dateSaved && <p className="font-body text-[11px] text-pastel-text">저장했어요.</p>}
             <button
               type="submit"
               disabled={dateBusy}
-              className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white shadow-[0_0_10px_rgba(199,125,214,0.5)] disabled:opacity-50"
+              className="pixel-btn font-title w-full border-2 border-pastel-border bg-pastel-accent py-2 text-[14px] text-pastel-text disabled:opacity-50"
             >
               저장
             </button>
           </form>
         )}
-        <p className="mt-2 text-xs text-gray-400">둘 중 누구나 수정할 수 있어요.</p>
-      </section>
+        <p className="font-body mt-2 text-[11px] text-pastel-accent">둘 중 누구나 수정할 수 있어요.</p>
+      </PixelPanel>
 
-      <section className="frame-glow p-5">
-        <h3 className="text-glow mb-3 text-sm font-semibold text-love-700">내 표시 이름</h3>
+      <PixelPanel innerClassName="p-5">
+        <h3 className="font-title mb-3 text-[14px] text-pastel-text">내 표시 이름</h3>
         <form onSubmit={handleSaveName} className="space-y-3">
           <input
             type="text"
@@ -104,22 +105,22 @@ export default function Settings() {
               setName(e.target.value)
               setNameSaved(false)
             }}
-            className="w-full rounded-xl border border-love-200 px-4 py-3 text-sm outline-none focus:border-love-400"
+            className="font-body w-full border-2 border-pastel-border bg-pastel-bg px-3 py-2 text-[11px] text-pastel-text outline-none"
           />
-          {nameError && <p className="text-xs text-red-500">{nameError}</p>}
-          {nameSaved && <p className="text-xs text-love-600">저장했어요.</p>}
+          {nameError && <p className="font-body text-[11px] text-pastel-border">{nameError}</p>}
+          {nameSaved && <p className="font-body text-[11px] text-pastel-text">저장했어요.</p>}
           <button
             type="submit"
             disabled={nameBusy}
-            className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white shadow-[0_0_10px_rgba(199,125,214,0.5)] disabled:opacity-50"
+            className="pixel-btn font-title w-full border-2 border-pastel-border bg-pastel-accent py-2 text-[14px] text-pastel-text disabled:opacity-50"
           >
             저장
           </button>
         </form>
-        <p className="mt-2 text-xs text-gray-400">
+        <p className="font-body mt-2 text-[11px] text-pastel-accent">
           투두와 데이트 기록에 작성자로 표시돼요. {mode === 'local' && '(이 기기에만 저장)'}
         </p>
-      </section>
+      </PixelPanel>
     </div>
   )
 }

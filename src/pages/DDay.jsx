@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { getRelationship, setStartDate, subscribeToChanges } from '../lib/store'
 import { getDayCount, getUpcomingAnniversaries } from '../lib/date-utils'
+import PixelPanel from '../components/PixelPanel'
+import { GiftIcon } from '../components/icons'
 
 function StartDateSetup({ onSaved }) {
   const [date, setDate] = useState('')
@@ -24,25 +26,26 @@ function StartDateSetup({ onSaved }) {
 
   return (
     <div className="flex flex-col items-center justify-center gap-4 pt-16 text-center">
-      <div className="text-4xl">📅</div>
-      <h2 className="text-glow text-lg font-bold text-love-700">만난 날을 입력해주세요</h2>
-      <form onSubmit={handleSubmit} className="frame-glow w-full max-w-xs space-y-3 p-5">
-        <input
-          type="date"
-          required
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="w-full rounded-xl border border-love-200 bg-white px-4 py-3 text-sm outline-none focus:border-love-400"
-        />
-        {error && <p className="text-xs text-red-500">{error}</p>}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white shadow-[0_0_12px_rgba(199,125,214,0.55)] disabled:opacity-50"
-        >
-          저장하고 시작하기
-        </button>
-      </form>
+      <h2 className="font-title text-[14px] text-pastel-text">만난 날을 입력해주세요</h2>
+      <PixelPanel className="w-full max-w-xs" innerClassName="w-full p-5">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="date"
+            required
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="font-body w-full border-2 border-pastel-border bg-pastel-bg px-3 py-2 text-[11px] text-pastel-text outline-none"
+          />
+          {error && <p className="font-body text-[11px] text-pastel-border">{error}</p>}
+          <button
+            type="submit"
+            disabled={busy}
+            className="pixel-btn font-title w-full border-2 border-pastel-border bg-pastel-accent py-2 text-[14px] text-pastel-text disabled:opacity-50"
+          >
+            저장하고 시작하기
+          </button>
+        </form>
+      </PixelPanel>
     </div>
   )
 }
@@ -52,6 +55,7 @@ export default function DDay() {
   const [startDate, setStartDateState] = useState(null)
   const [dayCount, setDayCount] = useState(0)
   const [next, setNext] = useState(null)
+  const [upcoming, setUpcoming] = useState([])
   const [error, setError] = useState('')
 
   const load = async () => {
@@ -61,7 +65,9 @@ export default function DDay() {
       if (rel?.startDate) {
         setStartDateState(rel.startDate)
         setDayCount(getDayCount(rel.startDate))
-        setNext(getUpcomingAnniversaries(rel.startDate, new Date(), 1)[0] || null)
+        const list = getUpcomingAnniversaries(rel.startDate, new Date(), 5)
+        setNext(list[0] || null)
+        setUpcoming(list)
       } else {
         setStartDateState(null)
       }
@@ -79,11 +85,11 @@ export default function DDay() {
   }, [])
 
   if (loading) {
-    return <div className="pt-24 text-center text-love-400">불러오는 중...</div>
+    return <div className="font-body pt-24 text-center text-[11px] text-pastel-text">불러오는 중...</div>
   }
 
   if (error) {
-    return <div className="pt-24 text-center text-red-500">{error}</div>
+    return <div className="font-body pt-24 text-center text-[11px] text-pastel-border">{error}</div>
   }
 
   if (!startDate) {
@@ -92,35 +98,52 @@ export default function DDay() {
         onSaved={(date) => {
           setStartDateState(date)
           setDayCount(getDayCount(date))
-          setNext(getUpcomingAnniversaries(date, new Date(), 1)[0] || null)
+          const list = getUpcomingAnniversaries(date, new Date(), 5)
+          setNext(list[0] || null)
+          setUpcoming(list)
         }}
       />
     )
   }
 
   return (
-    <div className="flex flex-col gap-6 pt-6">
-      <section className="frame-glow p-8 text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-love-400">
-          Our Days Together
-        </p>
-        <p className="text-glow mt-3 text-lg font-semibold text-love-600">
-          우리가 만난 지
-        </p>
-        <p className="text-glow-strong mt-1 text-6xl font-black text-love-600">
+    <div className="flex flex-col gap-4 pt-6">
+      <PixelPanel innerClassName="p-6 text-center">
+        <p className="font-body text-[11px] text-pastel-text">OUR DAYS TOGETHER</p>
+        <p className="font-body mt-2 text-[11px] text-pastel-text">우리가 만난 지</p>
+        <p className="font-title mt-1 text-[42px] leading-none text-pastel-text">
           {dayCount.toLocaleString()}
-          <span className="ml-1 text-2xl font-bold text-love-500">일째</span>
+          <span className="font-body ml-1 text-[14px]">일째</span>
         </p>
         {next && (
-          <p className="mt-5 text-sm text-love-500">
-            {next.label}까지{' '}
-            <span className="text-glow font-semibold text-love-700">
-              {next.dday === 0 ? 'D-Day' : `D-${next.dday}`}
-            </span>{' '}
-            ({next.dateLabel})
+          <p className="font-body mt-4 text-[11px] text-pastel-text">
+            {next.label}까지 <span className="font-title text-[14px]">D-{next.dday}</span> (
+            {next.dateLabel})
           </p>
         )}
-      </section>
+      </PixelPanel>
+
+      <div className="flex items-center gap-2">
+        <GiftIcon className="h-4 w-4 text-pastel-border" />
+        <h3 className="font-title text-[14px] text-pastel-text">다가오는 기념일</h3>
+      </div>
+
+      <PixelPanel innerClassName="">
+        {upcoming.map((a) => (
+          <div
+            key={`${a.type}-${a.n}`}
+            className="flex items-center justify-between border-b-2 border-pastel-border px-4 py-3 last:border-b-0"
+          >
+            <div>
+              <p className="font-title text-[14px] text-pastel-text">{a.label}</p>
+              <p className="font-body text-[11px] text-pastel-text">{a.dateLabel}</p>
+            </div>
+            <span className="font-title text-[14px] text-pastel-text">
+              {a.dday === 0 ? 'D-Day' : `D-${a.dday}`}
+            </span>
+          </div>
+        ))}
+      </PixelPanel>
     </div>
   )
 }

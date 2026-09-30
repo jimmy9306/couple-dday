@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
 import { addTodo, deleteTodo, listTodos, subscribeToChanges, toggleTodo } from '../lib/store'
+import PixelPanel from '../components/PixelPanel'
+import { CheckIcon } from '../components/icons'
 
 export default function Todo() {
   const { authorName } = useAuth()
@@ -8,6 +10,7 @@ export default function Todo() {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [clearId, setClearId] = useState(null)
 
   const load = async () => {
     setTodos(await listTodos())
@@ -34,8 +37,13 @@ export default function Todo() {
   }
 
   const handleToggle = async (todo) => {
-    setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, done: !t.done } : t)))
-    await toggleTodo(todo.id, !todo.done)
+    const willBeDone = !todo.done
+    setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, done: willBeDone } : t)))
+    if (willBeDone) {
+      setClearId(todo.id)
+      window.setTimeout(() => setClearId((cur) => (cur === todo.id ? null : cur)), 900)
+    }
+    await toggleTodo(todo.id, willBeDone)
   }
 
   const handleDelete = async (id) => {
@@ -45,7 +53,7 @@ export default function Todo() {
 
   return (
     <div className="pt-6">
-      <h2 className="text-glow mb-4 text-lg font-bold text-love-700">같이 할 일</h2>
+      <h2 className="font-title mb-4 text-[14px] text-pastel-text">같이 할 일</h2>
 
       <form onSubmit={handleAdd} className="mb-4 flex gap-2">
         <input
@@ -53,58 +61,65 @@ export default function Todo() {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="할 일을 입력하세요"
-          className="flex-1 rounded-xl border border-love-200 bg-white px-4 py-3 text-sm outline-none focus:border-love-400"
+          className="font-body flex-1 border-2 border-pastel-border bg-pastel-bg px-3 py-2 text-[11px] text-pastel-text outline-none"
         />
         <button
           type="submit"
           disabled={busy}
-          className="rounded-xl bg-love-500 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_10px_rgba(199,125,214,0.5)] disabled:opacity-50"
+          className="pixel-btn font-title border-2 border-pastel-border bg-pastel-accent px-4 py-2 text-[14px] text-pastel-text disabled:opacity-50"
         >
           추가
         </button>
       </form>
 
       {loading ? (
-        <p className="text-center text-sm text-love-400">불러오는 중...</p>
+        <p className="font-body text-center text-[11px] text-pastel-text">불러오는 중...</p>
       ) : todos.length === 0 ? (
-        <p className="text-center text-sm text-gray-400">아직 할 일이 없어요.</p>
+        <p className="font-body text-center text-[11px] text-pastel-text">아직 할 일이 없어요.</p>
       ) : (
-        <ul className="frame-glow divide-y divide-love-100 overflow-hidden">
+        <PixelPanel innerClassName="">
           {todos.map((todo) => (
-            <li key={todo.id} className="flex items-center gap-3 px-4 py-3">
+            <div
+              key={todo.id}
+              className="relative flex items-center gap-3 border-b-2 border-pastel-border px-4 py-3 last:border-b-0"
+            >
               <button
                 type="button"
                 onClick={() => handleToggle(todo)}
-                className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 text-xs ${
-                  todo.done
-                    ? 'border-love-500 bg-love-500 text-white shadow-[0_0_8px_rgba(199,125,214,0.6)]'
-                    : 'border-love-300 text-transparent'
+                className={`flex h-5 w-5 flex-shrink-0 items-center justify-center border-2 border-pastel-border ${
+                  todo.done ? 'bg-pastel-accent' : 'bg-pastel-bg'
                 }`}
               >
-                ✓
+                {todo.done && <CheckIcon className="h-3.5 w-3.5 text-pastel-border" />}
               </button>
               <div className="min-w-0 flex-1">
                 <p
-                  className={`truncate text-sm ${
-                    todo.done ? 'text-gray-400 line-through' : 'text-gray-700'
+                  className={`font-body truncate text-[11px] ${
+                    todo.done ? 'text-pastel-accent line-through' : 'text-pastel-text'
                   }`}
                 >
                   {todo.content}
                 </p>
                 {todo.createdBy && (
-                  <p className="text-[11px] text-gray-300">{todo.createdBy}</p>
+                  <p className="font-body text-[11px] text-pastel-accent">{todo.createdBy}</p>
                 )}
               </div>
               <button
                 type="button"
                 onClick={() => handleDelete(todo.id)}
-                className="flex-shrink-0 text-sm text-gray-300"
+                className="font-body flex-shrink-0 text-[11px] text-pastel-accent"
               >
                 삭제
               </button>
-            </li>
+
+              {clearId === todo.id && (
+                <span className="pixel-clear-flash font-title pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 border-2 border-pastel-border bg-pastel-accent px-2 py-1 text-[11px] text-pastel-text">
+                  CLEAR!
+                </span>
+              )}
+            </div>
           ))}
-        </ul>
+        </PixelPanel>
       )}
     </div>
   )

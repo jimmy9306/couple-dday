@@ -4,29 +4,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        // "레트로 게임 메뉴판 + 파스텔 네온" 팔레트: 크림 핑크 배경 + 라일락/핑크 네온
-        love: {
-          50: '#FFF5FA',
-          100: '#FCE4F3',
-          200: '#F5C6EA',
-          300: '#E9A6E0',
-          400: '#D98BDB',
-          500: '#C77DD6',
-          600: '#B15FC4',
-          700: '#8F45A1',
-          800: '#6D3280',
-          900: '#4B2160',
+        // "파스텔 핑크 픽셀 RPG" — 딱 5색만 사용
+        pastel: {
+          bg: '#FFF4F7',
+          box: '#FFC8DD',
+          accent: '#FF8FB8',
+          border: '#D6457A',
+          text: '#5A2A3A',
         },
       },
       fontFamily: {
-        sans: [
-          '"Pretendard"',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          '"Apple SD Gothic Neo"',
-          '"Segoe UI"',
-          'sans-serif',
-        ],
+        title: ['Galmuri14', 'monospace'],
+        body: ['Galmuri11', 'monospace'],
+        sans: ['Galmuri11', 'monospace'],
+      },
+      borderRadius: {
+        none: '0px',
       },
     },
   },

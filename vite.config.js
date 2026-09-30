@@ -17,8 +17,8 @@ export default defineConfig({
         name: '우리 디데이',
         short_name: '디데이',
         description: '커플 전용 디데이 / 기념일 / 캘린더 / 투두 앱',
-        theme_color: '#ff5c8a',
-        background_color: '#fff5f7',
+        theme_color: '#D6457A',
+        background_color: '#FFF4F7',
         display: 'standalone',
         start_url: BASE_PATH,
         scope: BASE_PATH,
@@ -43,6 +43,18 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // galmuri 패키지가 여러 굵기/폭(7,9,11,11-Bold,11-Condensed,14,Mono...)의 폰트를
+        // 한 CSS에 다 선언해두지만 실제로 쓰는 건 Galmuri11/Galmuri14 뿐이라,
+        // 나머지 굵기 + 구형 브라우저용 .ttf 폴백은 오프라인 캐시에서 제외해서 용량을 줄임
+        // (woff2는 모던 브라우저가 전부 지원하므로 ttf 미캐싱은 안전한 트레이드오프).
+        globIgnores: [
+          '**/Galmuri7*',
+          '**/Galmuri9*',
+          '**/GalmuriMono*',
+          '**/Galmuri11-Bold*',
+          '**/Galmuri11-Condensed*',
+          '**/*.ttf',
+        ],
       },
     }),
   ],

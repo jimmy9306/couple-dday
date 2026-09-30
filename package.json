@@ -13,6 +13,7 @@
     "@supabase/supabase-js": "^2.45.4",
     "browser-image-compression": "^2.0.2",
     "date-fns": "^3.6.0",
+    "galmuri": "^2.40.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.2"

@@ -86,6 +86,44 @@ export function getUpcomingAnniversaries(startDateStr, today = new Date(), count
   }))
 }
 
+/**
+ * "LOVE 게이지" 진행률: 직전 기념일 -> 다음 기념일 사이에서 오늘이 얼마나 왔는지 0~1.
+ * 사귄 날 자체도 기준점(0번째 마일스톤)으로 포함한다.
+ */
+export function getLoveGaugeProgress(startDateStr, today = new Date()) {
+  const start = toDate(startDateStr)
+  const t = startOfDay(today)
+
+  const milestones = [{ date: start, label: '시작' }]
+  for (let n = 1; n <= 100; n += 1) {
+    milestones.push({ date: get100DayAnniversaryDate(startDateStr, n), label: `${n * 100}일` })
+    milestones.push({ date: getYearAnniversaryDate(startDateStr, n), label: `${n}주년` })
+  }
+  milestones.sort((a, b) => a.date - b.date)
+
+  let prev = milestones[0]
+  let next = milestones[milestones.length - 1]
+  for (let i = 0; i < milestones.length; i += 1) {
+    if (milestones[i].date <= t) prev = milestones[i]
+    if (milestones[i].date > t) {
+      next = milestones[i]
+      break
+    }
+  }
+
+  const totalMs = next.date - prev.date
+  const doneMs = t - prev.date
+  const progress = totalMs > 0 ? Math.min(1, Math.max(0, doneMs / totalMs)) : 1
+
+  return {
+    progress,
+    prevLabel: prev.label,
+    nextLabel: next.label,
+    nextDday: differenceInCalendarDays(next.date, t),
+    nextDateLabel: format(next.date, 'yyyy.MM.dd'),
+  }
+}
+
 /** 특정 날짜(yyyy-MM-dd)가 100일 단위 또는 주년 기념일이면 라벨을, 아니면 null을 반환 */
 export function getAnniversaryLabelForDate(startDateStr, dateStr) {
   const start = toDate(startDateStr)

@@ -94,3 +94,42 @@
   GitHub Pages를 못 쓰기 때문. `.env`(Supabase anon key)는 `.gitignore`에 있어 저장소에 올라가지 않고,
   배포 시 필요한 키는 GitHub Actions Secrets로만 주입됨 (anon key 자체는 클라이언트에 노출되는 게
   정상이지만, 그래도 레포에 하드코딩하지 않고 Secrets 경유로 빌드 타임에 주입하는 구조 유지).
+
+## 12. (수정 요청 반영) "파스텔 핑크 픽셀 RPG" 리디자인 — 네온/글로우 완전 제거
+- 이전(10번) 리디자인에서 만든 네온/글로우 스타일(`frame-glow`/`text-glow`, box-shadow blur)을
+  전부 제거하고 5색 고정 팔레트(`bg #FFF4F7 / box #FFC8DD / accent #FF8FB8 / border·shadow #D6457A
+  / text #5A2A3A`)로 새로 교체. `tailwind.config.js`의 `love-*` 스케일을 통째로 걷어내고
+  `pastel.{bg,box,accent,border,text}` 5개 키만 남겨서, 다른 색이 실수로 섞여 들어갈 여지를 원천 차단함.
+  `index.css`에 `* { border-radius: 0 !important; }`도 걸어서 rounded 클래스가 어딘가 남아있어도
+  강제로 각지게 만듦(안전망).
+- 폰트: `npm i galmuri` 설치 후 `main.jsx`에서 `galmuri/dist/galmuri.css`를 그대로 import(요청대로).
+  다만 이 CSS 하나에 Galmuri7/9/11/11-Bold/11-Condensed/14/Mono 등 9종 폰트가 전부 선언돼 있어서,
+  vite-plugin-pwa가 오프라인 캐시(precache)에 전부 담아버리면 3.8MB나 됨 — 실제로 쓰는 건
+  Galmuri11/Galmuri14 두 개뿐이라, `vite.config.js`의 workbox `globIgnores`로 나머지 굵기와
+  모든 `.ttf`(구형 브라우저 폴백, woff2로 이미 커버됨)를 캐시 대상에서 제외해서 1.5MB로 줄임.
+  실제 로드되는 폰트 파일 자체는 그대로(전부 설치됨), 오프라인 프리캐시 대상만 최적화한 것.
+- 글자 크기는 "정수배" 규칙을 지키기 위해 Galmuri11 계열은 11px/22px, Galmuri14 계열은
+  14px/28px/42px만 사용 (Tailwind 화살괄호 임의값 `text-[11px]` 등으로 명시).
+- 계단식 픽셀 테두리 + 블러 없는 하드 섀도우는 `src/components/PixelPanel.jsx`라는 재사용 컴포넌트로
+  구현. clip-path로 모서리를 계단 모양으로 깎은 바깥(테두리색)+안쪽(박스색) 2겹 구조를 만들고,
+  `filter: drop-shadow(4px 4px 0 #D6457A)`로 그림자를 입힘 — box-shadow 대신 filter/drop-shadow를
+  쓴 이유는, box-shadow는 clip-path로 깎인 모양을 무시하고 원래 사각형 기준으로 그려지는 반면
+  drop-shadow는 실제 렌더링된(계단 깎인) 실루엣을 따라가기 때문. 이 패널을 모든 화면의
+  카드/박스에 공통으로 사용.
+- 버튼 프레스 효과(`pixel-btn`/`pixel-tile` 클래스)는 blur 없는 오프셋 그림자를 기본으로 두고
+  `:active`에서 그림자를 없애면서 `translate(2px, 2px)`로 살짝 눌리게 처리 (요청 스펙 그대로).
+- 아이콘: `src/components/icons.jsx`를 16x16 픽셀 그리드 기반으로 전면 재작성 (이전의 부드러운
+  stroke 라인아트 → `<rect>` 픽셀 셀로 그린 진짜 픽셀아트). `shape-rendering="crispEdges"` +
+  `image-rendering: pixelated` 둘 다 적용.
+- 메인 화면을 다시 "하나의 화면"으로 합침: `Home.jsx`(기존 Menu.jsx를 대체)에 LOVE QUEST 타이틀
+  + RPG 대화창(만난 지 N일째) + LOVE 게이지(HP바) + RPG 메뉴(▶ 커서, 디데이/달력/투두/설정 4개)를
+  전부 담음. 이번 스펙의 메뉴가 4개뿐이라 "기념일"은 최상위 메뉴/탭에서 빠졌지만, 기능 자체는
+  삭제하지 않고 `DDay.jsx`(디데이 화면) 안에 "다가오는 기념일" 목록으로 다시 합쳐 넣었음
+  (선물 아이콘은 거기서 섹션 제목 옆에 사용). 하단 탭도 5개(홈/디데이/달력/투두/설정)로 맞춤.
+  `Anniversaries.jsx` 페이지/라우트는 삭제.
+- LOVE 게이지 계산: `date-utils.js`에 `getLoveGaugeProgress()` 추가. 사귄 날을 0번째 마일스톤으로
+  포함해서 "직전 마일스톤 ~ 다음 마일스톤" 사이 경과 비율(0~1)을 구하고, 10칸짜리 HP바로 반올림해
+  채움 칸 수를 표시.
+- 투두 "CLEAR!" 연출: 완료로 체크하는 순간에만(체크 해제 시엔 X) 0.9초짜리 pop 애니메이션 배지를
+  해당 행에 `pointer-events-none`으로 겹쳐 띄우고 타임아웃으로 제거. 완료 여부 자체는 기존
+  `toggleTodo` 로직 그대로 사용 (기능 변경 없음).
