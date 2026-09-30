@@ -1,11 +1,14 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
+import { HeartIcon, CalendarIcon, CheckIcon, GiftIcon, GearIcon } from './icons'
 
 const tabs = [
-  { to: '/', label: '홈', icon: '🏠', end: true },
-  { to: '/calendar', label: '달력', icon: '📅', end: false },
-  { to: '/todo', label: '투두', icon: '✅', end: false },
-  { to: '/settings', label: '설정', icon: '⚙️', end: false },
+  { to: '/', label: '홈', Icon: null, emoji: '🕹️', end: true },
+  { to: '/dday', label: '디데이', Icon: HeartIcon, end: false },
+  { to: '/calendar', label: '달력', Icon: CalendarIcon, end: false },
+  { to: '/todo', label: '투두', Icon: CheckIcon, end: false },
+  { to: '/anniversaries', label: '기념일', Icon: GiftIcon, end: false },
+  { to: '/settings', label: '설정', Icon: GearIcon, end: false },
 ]
 
 export default function Layout() {
@@ -36,21 +39,25 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <nav className="fixed bottom-0 left-1/2 w-full max-w-md -translate-x-1/2 border-t border-love-100 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <nav className="fixed bottom-0 left-1/2 w-full max-w-md -translate-x-1/2 border-t-[3px] border-love-500 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_16px_rgba(199,125,214,0.35)] backdrop-blur">
         <div className="flex justify-around">
-          {tabs.map((tab) => (
+          {tabs.map(({ to, label, Icon, emoji, end }) => (
             <NavLink
-              key={tab.to}
-              to={tab.to}
-              end={tab.end}
+              key={to}
+              to={to}
+              end={end}
               className={({ isActive }) =>
-                `flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs ${
-                  isActive ? 'text-love-600 font-semibold' : 'text-gray-400'
+                `flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] ${
+                  isActive ? 'text-glow font-semibold text-love-600' : 'text-gray-400'
                 }`
               }
             >
-              <span className="text-lg leading-none">{tab.icon}</span>
-              {tab.label}
+              {Icon ? (
+                <Icon className="h-5 w-5" />
+              ) : (
+                <span className="text-base leading-none">{emoji}</span>
+              )}
+              {label}
             </NavLink>
           ))}
         </div>

@@ -72,10 +72,10 @@ export default function DateRecordModal({ dateStr, record, anniversaryLabel, aut
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-      <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:rounded-3xl">
+      <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-[28px] border-x-[3px] border-t-[3px] border-love-500 bg-white p-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] shadow-[0_-4px_22px_rgba(199,125,214,0.35)] sm:rounded-[28px] sm:border-b-[3px]">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold text-love-700">{dateStr}</h3>
+            <h3 className="text-glow text-base font-bold text-love-700">{dateStr}</h3>
             {anniversaryLabel && (
               <span className="mt-1 inline-block rounded-full bg-love-100 px-2.5 py-0.5 text-xs font-semibold text-love-600">
                 💗 {anniversaryLabel}
@@ -133,7 +133,7 @@ export default function DateRecordModal({ dateStr, record, anniversaryLabel, aut
             <button
               type="submit"
               disabled={busy || compressing}
-              className="flex-1 rounded-xl bg-love-500 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="flex-1 rounded-xl bg-love-500 py-3 text-sm font-semibold text-white shadow-[0_0_10px_rgba(199,125,214,0.5)] disabled:opacity-50"
             >
               저장
             </button>

@@ -68,61 +68,68 @@ export default function Calendar() {
 
   return (
     <div className="pt-6">
-      <div className="mb-4 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => setCursor((c) => subMonths(c, 1))}
-          className="rounded-full px-3 py-1.5 text-love-500"
-        >
-          ◀
-        </button>
-        <h2 className="text-base font-bold text-love-700">{format(cursor, 'yyyy년 M월')}</h2>
-        <button
-          type="button"
-          onClick={() => setCursor((c) => addMonths(c, 1))}
-          className="rounded-full px-3 py-1.5 text-love-500"
-        >
-          ▶
-        </button>
+      <div className="frame-glow mb-4 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setCursor((c) => subMonths(c, 1))}
+            className="rounded-full px-3 py-1.5 text-love-500"
+          >
+            ◀
+          </button>
+          <h2 className="text-glow text-base font-bold text-love-700">
+            {format(cursor, 'yyyy년 M월')}
+          </h2>
+          <button
+            type="button"
+            onClick={() => setCursor((c) => addMonths(c, 1))}
+            className="rounded-full px-3 py-1.5 text-love-500"
+          >
+            ▶
+          </button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-y-1 text-center text-xs text-gray-400">
+          {WEEKDAYS.map((w) => (
+            <div key={w} className="py-1">
+              {w}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-y-1.5">
+          {days.map((day) => {
+            const dateStr = format(day, 'yyyy-MM-dd')
+            const inMonth = isSameMonth(day, cursor)
+            const hasRecord = recordsByDate.has(dateStr)
+            const anniversary =
+              startDate && inMonth ? getAnniversaryLabelForDate(startDate, dateStr) : null
+
+            return (
+              <button
+                key={dateStr}
+                type="button"
+                onClick={() => setSelectedDate(dateStr)}
+                disabled={loading}
+                className={`relative mx-auto flex h-11 w-11 flex-col items-center justify-center rounded-full text-sm ${
+                  inMonth ? 'text-gray-700' : 'text-gray-300'
+                } ${
+                  isToday(day)
+                    ? 'border-2 border-love-500 font-bold text-love-600 shadow-[0_0_10px_rgba(199,125,214,0.5)]'
+                    : ''
+                } ${anniversary ? 'bg-love-100' : ''}`}
+              >
+                {day.getDate()}
+                {hasRecord && (
+                  <span className="absolute bottom-1 h-1 w-1 rounded-full bg-love-500" />
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-y-1 text-center text-xs text-gray-400">
-        {WEEKDAYS.map((w) => (
-          <div key={w} className="py-1">
-            {w}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-y-1.5">
-        {days.map((day) => {
-          const dateStr = format(day, 'yyyy-MM-dd')
-          const inMonth = isSameMonth(day, cursor)
-          const hasRecord = recordsByDate.has(dateStr)
-          const anniversary = startDate && inMonth ? getAnniversaryLabelForDate(startDate, dateStr) : null
-
-          return (
-            <button
-              key={dateStr}
-              type="button"
-              onClick={() => setSelectedDate(dateStr)}
-              disabled={loading}
-              className={`relative mx-auto flex h-11 w-11 flex-col items-center justify-center rounded-full text-sm ${
-                inMonth ? 'text-gray-700' : 'text-gray-300'
-              } ${isToday(day) ? 'border-2 border-love-400 font-bold text-love-600' : ''} ${
-                anniversary ? 'bg-love-100' : ''
-              }`}
-            >
-              {day.getDate()}
-              {hasRecord && (
-                <span className="absolute bottom-1 h-1 w-1 rounded-full bg-love-500" />
-              )}
-            </button>
-          )
-        })}
-      </div>
-
-      <div className="mt-4 space-y-1.5">
+      <div className="space-y-1.5">
         {days
           .filter((d) => isSameMonth(d, cursor) && startDate)
           .map((d) => {
@@ -132,9 +139,9 @@ export default function Calendar() {
             return (
               <div
                 key={dateStr}
-                className="flex items-center justify-between rounded-xl bg-white px-3.5 py-2 text-sm shadow-sm shadow-love-100"
+                className="frame-glow flex items-center justify-between px-3.5 py-2 text-sm"
               >
-                <span className="text-love-600">
+                <span className="text-glow text-love-600">
                   💗 {format(d, 'M월 d일')} · {label}
                 </span>
               </div>

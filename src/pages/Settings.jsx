@@ -60,10 +60,10 @@ export default function Settings() {
 
   return (
     <div className="flex flex-col gap-6 pt-6">
-      <h2 className="text-lg font-bold text-love-700">설정</h2>
+      <h2 className="text-glow text-lg font-bold text-love-700">설정</h2>
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-love-100">
-        <h3 className="mb-3 text-sm font-semibold text-love-700">만난 날</h3>
+      <section className="frame-glow p-5">
+        <h3 className="text-glow mb-3 text-sm font-semibold text-love-700">만난 날</h3>
         {dateLoading ? (
           <p className="text-sm text-love-400">불러오는 중...</p>
         ) : (
@@ -83,7 +83,7 @@ export default function Settings() {
             <button
               type="submit"
               disabled={dateBusy}
-              className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white shadow-[0_0_10px_rgba(199,125,214,0.5)] disabled:opacity-50"
             >
               저장
             </button>
@@ -92,8 +92,8 @@ export default function Settings() {
         <p className="mt-2 text-xs text-gray-400">둘 중 누구나 수정할 수 있어요.</p>
       </section>
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-love-100">
-        <h3 className="mb-3 text-sm font-semibold text-love-700">내 표시 이름</h3>
+      <section className="frame-glow p-5">
+        <h3 className="text-glow mb-3 text-sm font-semibold text-love-700">내 표시 이름</h3>
         <form onSubmit={handleSaveName} className="space-y-3">
           <input
             type="text"
@@ -111,7 +111,7 @@ export default function Settings() {
           <button
             type="submit"
             disabled={nameBusy}
-            className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white shadow-[0_0_10px_rgba(199,125,214,0.5)] disabled:opacity-50"
           >
             저장
           </button>

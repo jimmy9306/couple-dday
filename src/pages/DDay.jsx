@@ -23,10 +23,10 @@ function StartDateSetup({ onSaved }) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 pt-24 text-center">
+    <div className="flex flex-col items-center justify-center gap-4 pt-16 text-center">
       <div className="text-4xl">📅</div>
-      <h2 className="text-lg font-bold text-love-700">만난 날을 입력해주세요</h2>
-      <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-3">
+      <h2 className="text-glow text-lg font-bold text-love-700">만난 날을 입력해주세요</h2>
+      <form onSubmit={handleSubmit} className="frame-glow w-full max-w-xs space-y-3 p-5">
         <input
           type="date"
           required
@@ -38,7 +38,7 @@ function StartDateSetup({ onSaved }) {
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white disabled:opacity-50"
+          className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white shadow-[0_0_12px_rgba(199,125,214,0.55)] disabled:opacity-50"
         >
           저장하고 시작하기
         </button>
@@ -47,11 +47,11 @@ function StartDateSetup({ onSaved }) {
   )
 }
 
-export default function Main() {
+export default function DDay() {
   const [loading, setLoading] = useState(true)
   const [startDate, setStartDateState] = useState(null)
   const [dayCount, setDayCount] = useState(0)
-  const [upcoming, setUpcoming] = useState([])
+  const [next, setNext] = useState(null)
   const [error, setError] = useState('')
 
   const load = async () => {
@@ -61,7 +61,7 @@ export default function Main() {
       if (rel?.startDate) {
         setStartDateState(rel.startDate)
         setDayCount(getDayCount(rel.startDate))
-        setUpcoming(getUpcomingAnniversaries(rel.startDate, new Date(), 5))
+        setNext(getUpcomingAnniversaries(rel.startDate, new Date(), 1)[0] || null)
       } else {
         setStartDateState(null)
       }
@@ -92,51 +92,34 @@ export default function Main() {
         onSaved={(date) => {
           setStartDateState(date)
           setDayCount(getDayCount(date))
-          setUpcoming(getUpcomingAnniversaries(date, new Date(), 5))
+          setNext(getUpcomingAnniversaries(date, new Date(), 1)[0] || null)
         }}
       />
     )
   }
 
-  const next = upcoming[0]
-
   return (
     <div className="flex flex-col gap-6 pt-6">
-      <section className="rounded-3xl bg-white p-8 text-center shadow-sm shadow-love-100">
-        <p className="text-sm text-love-400">우리가 만난 지</p>
-        <p className="mt-2 text-5xl font-extrabold text-love-600">
+      <section className="frame-glow p-8 text-center">
+        <p className="text-xs font-semibold uppercase tracking-widest text-love-400">
+          Our Days Together
+        </p>
+        <p className="text-glow mt-3 text-lg font-semibold text-love-600">
+          우리가 만난 지
+        </p>
+        <p className="text-glow-strong mt-1 text-6xl font-black text-love-600">
           {dayCount.toLocaleString()}
           <span className="ml-1 text-2xl font-bold text-love-500">일째</span>
         </p>
         {next && (
-          <p className="mt-4 text-sm text-love-500">
+          <p className="mt-5 text-sm text-love-500">
             {next.label}까지{' '}
-            <span className="font-semibold text-love-700">
+            <span className="text-glow font-semibold text-love-700">
               {next.dday === 0 ? 'D-Day' : `D-${next.dday}`}
             </span>{' '}
             ({next.dateLabel})
           </p>
         )}
-      </section>
-
-      <section className="rounded-3xl bg-white p-5 shadow-sm shadow-love-100">
-        <h3 className="mb-3 text-sm font-semibold text-love-700">다가오는 기념일</h3>
-        <ul className="space-y-2.5">
-          {upcoming.map((a) => (
-            <li
-              key={`${a.type}-${a.n}`}
-              className="flex items-center justify-between rounded-xl bg-love-50 px-3.5 py-2.5"
-            >
-              <div>
-                <p className="text-sm font-medium text-love-700">{a.label}</p>
-                <p className="text-xs text-love-400">{a.dateLabel}</p>
-              </div>
-              <span className="text-sm font-semibold text-love-500">
-                {a.dday === 0 ? 'D-Day' : `D-${a.dday}`}
-              </span>
-            </li>
-          ))}
-        </ul>
       </section>
     </div>
   )

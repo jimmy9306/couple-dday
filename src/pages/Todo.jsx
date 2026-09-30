@@ -45,7 +45,7 @@ export default function Todo() {
 
   return (
     <div className="pt-6">
-      <h2 className="mb-4 text-lg font-bold text-love-700">같이 할 일</h2>
+      <h2 className="text-glow mb-4 text-lg font-bold text-love-700">같이 할 일</h2>
 
       <form onSubmit={handleAdd} className="mb-4 flex gap-2">
         <input
@@ -58,7 +58,7 @@ export default function Todo() {
         <button
           type="submit"
           disabled={busy}
-          className="rounded-xl bg-love-500 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+          className="rounded-xl bg-love-500 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_10px_rgba(199,125,214,0.5)] disabled:opacity-50"
         >
           추가
         </button>
@@ -69,17 +69,16 @@ export default function Todo() {
       ) : todos.length === 0 ? (
         <p className="text-center text-sm text-gray-400">아직 할 일이 없어요.</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="frame-glow divide-y divide-love-100 overflow-hidden">
           {todos.map((todo) => (
-            <li
-              key={todo.id}
-              className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm shadow-love-100"
-            >
+            <li key={todo.id} className="flex items-center gap-3 px-4 py-3">
               <button
                 type="button"
                 onClick={() => handleToggle(todo)}
                 className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 text-xs ${
-                  todo.done ? 'border-love-500 bg-love-500 text-white' : 'border-love-300 text-transparent'
+                  todo.done
+                    ? 'border-love-500 bg-love-500 text-white shadow-[0_0_8px_rgba(199,125,214,0.6)]'
+                    : 'border-love-300 text-transparent'
                 }`}
               >
                 ✓

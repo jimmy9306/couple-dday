@@ -55,70 +55,73 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-love-50 px-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="text-4xl">💗</div>
-          <h1 className="mt-2 text-xl font-bold text-love-700">우리 디데이</h1>
+          <h1 className="text-glow-strong text-3xl font-extrabold tracking-wide text-love-600">
+            LOVEPAD
+          </h1>
           <p className="mt-1 text-sm text-love-400">
             {mode === 'supabase' ? '둘만의 공간, 로그인해서 시작해요' : '이름을 입력하고 시작해요'}
           </p>
         </div>
 
-        {mode === 'supabase' ? (
-          <form onSubmit={handleSignIn} className="space-y-3">
-            <input
-              type="email"
-              required
-              placeholder="이메일"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-love-200 bg-white px-4 py-3 text-sm outline-none focus:border-love-400"
-            />
-            <input
-              type="password"
-              required
-              placeholder="비밀번호"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-love-200 bg-white px-4 py-3 text-sm outline-none focus:border-love-400"
-            />
-            {error && <p className="text-xs text-red-500">{error}</p>}
-            {info && <p className="text-xs text-love-600">{info}</p>}
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              로그인
-            </button>
-            <button
-              type="button"
-              onClick={handleSignUp}
-              disabled={busy}
-              className="w-full rounded-xl border border-love-300 py-3 text-sm font-semibold text-love-600 disabled:opacity-50"
-            >
-              회원가입
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleLocalSubmit} className="space-y-3">
-            <input
-              type="text"
-              required
-              placeholder="이름 (예: 지민)"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-love-200 bg-white px-4 py-3 text-sm outline-none focus:border-love-400"
-            />
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white"
-            >
-              시작하기
-            </button>
-            <p className="text-center text-xs text-gray-400">
-              Supabase 연결 전이라 이 기기(브라우저)에만 저장돼요.
-            </p>
-          </form>
-        )}
+        <div className="frame-glow p-6">
+          {mode === 'supabase' ? (
+            <form onSubmit={handleSignIn} className="space-y-3">
+              <input
+                type="email"
+                required
+                placeholder="이메일"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border border-love-200 bg-white px-4 py-3 text-sm outline-none focus:border-love-400"
+              />
+              <input
+                type="password"
+                required
+                placeholder="비밀번호"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-love-200 bg-white px-4 py-3 text-sm outline-none focus:border-love-400"
+              />
+              {error && <p className="text-xs text-red-500">{error}</p>}
+              {info && <p className="text-xs text-love-600">{info}</p>}
+              <button
+                type="submit"
+                disabled={busy}
+                className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white shadow-[0_0_10px_rgba(199,125,214,0.5)] disabled:opacity-50"
+              >
+                로그인
+              </button>
+              <button
+                type="button"
+                onClick={handleSignUp}
+                disabled={busy}
+                className="w-full rounded-xl border border-love-300 py-3 text-sm font-semibold text-love-600 disabled:opacity-50"
+              >
+                회원가입
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleLocalSubmit} className="space-y-3">
+              <input
+                type="text"
+                required
+                placeholder="이름 (예: 지민)"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-xl border border-love-200 bg-white px-4 py-3 text-sm outline-none focus:border-love-400"
+              />
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-love-500 py-3 text-sm font-semibold text-white shadow-[0_0_10px_rgba(199,125,214,0.5)]"
+              >
+                시작하기
+              </button>
+              <p className="text-center text-xs text-gray-400">
+                Supabase 연결 전이라 이 기기(브라우저)에만 저장돼요.
+              </p>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   )

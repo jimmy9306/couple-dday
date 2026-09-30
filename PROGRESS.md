@@ -41,3 +41,18 @@
 - Supabase 모드는 스키마(SQL)를 아직 실행하지 않아서 실제 로그인/allowed_members/realtime 동작은 로컬 모드로만 우회 검증했음 (테이블이 없어서 supabase 모드로는 에러 남). SQL 실행(이메일 채워서) + 계정 2개 생성 후 실제로 한 번씩 눌러보는 걸 권장.
 - 지금 `.env`에는 실제 Supabase URL/anon key가 들어있어서, 로컬에서 `npm run dev` 하면 바로 Supabase 모드로 뜸 (로그인 필수, allowed_members 테이블 없으면 멤버십 체크에서 에러 나면서 "초대된 사용자만 이용 가능" 화면으로 빠질 수 있음 — SQL 실행 전이라 정상임).
 - 표시 이름은 "작성 시점 스냅샷"이라, 나중에 이름을 바꿔도 과거 투두/기록의 작성자 텍스트는 안 바뀜 (DECISIONS.md 8번 참고).
+
+## 3차 수정 요청 (2026-09-30) — "레트로 게임 메뉴판 + 파스텔 네온" 리디자인
+
+- [x] 26. `tailwind.config.js` love 팔레트를 라일락/핑크(#C77DD6 계열)로 교체, 크림 핑크 배경(#FFF5FA) 유지.
+- [x] 27. `index.css`에 글로우 유틸리티(`.frame-glow`/`.text-glow`/`.text-glow-strong`) + 메뉴 탭 프레스 플래시 애니메이션(`@keyframes lp-flash`) 추가, body 기본 굵기 300(Thin)으로 변경.
+- [x] 28. `src/components/icons.jsx` 신규 — 하트/달력/체크/선물/톱니 5종 커스텀 라인 SVG 아이콘 직접 제작.
+- [x] 29. `src/pages/Menu.jsx` 신규 — "/" 를 LOVEPAD 게임 메뉴판 허브로 교체 (좌상단 LOVEPAD 타이틀, 우상단 OUR ANNIVERSARY PROGRAM, 테두리 박스 안 아이콘+메뉴 5개 세로 나열, 우하단 Couple No.1 / Day N, 탭 시 글로우 플래시 후 라우팅).
+- [x] 30. `src/pages/DDay.jsx` 신규(기존 Main.jsx의 만난 날 입력/일수 계산 로직을 그대로 이관) — "/dday"로 이동, 다음 기념일 D-day까지만 표시(목록은 분리).
+- [x] 31. `src/pages/Anniversaries.jsx` 신규 — 기존 Main.jsx의 "다가오는 기념일 5개" 목록을 "/anniversaries"로 분리 이관.
+- [x] 32. `src/pages/Main.jsx` 삭제 (Menu+DDay+Anniversaries로 대체), `App.jsx` 라우트 갱신.
+- [x] 33. `Layout.jsx` 하단 탭을 홈/디데이/달력/투두/기념일/설정 6개로 재구성 + 네온 글로우 활성 탭 스타일, 새 라인아이콘 적용.
+- [x] 34. Calendar/Todo/Settings/Login/DateRecordModal 전부 `frame-glow`/`text-glow` 스타일로 통일 (기존 카드 스타일 rounded-3xl+shadow-sm → 두꺼운 글로우 테두리로 교체). 기능 로직은 변경 없음.
+- [x] 35. 390×844(모바일) 뷰포트로 로컬 모드에서 전체 화면(메뉴/디데이/달력/투두/기념일/설정/기록모달) 실물 확인 완료 — 검증용으로 `/Users/jimmy/JUSIK/.claude/launch.json`을 임시로 다시 만들었다가 검증 끝나고 즉시 재삭제함(지시사항 유지).
+- [x] 36. `npm run build` 최종 성공 확인.
+- [x] 37. 단계별 커밋 진행.
