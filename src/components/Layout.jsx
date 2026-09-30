@@ -1,0 +1,53 @@
+import { NavLink, Outlet } from 'react-router-dom'
+import { useAuth } from '../lib/AuthContext'
+
+const tabs = [
+  { to: '/', label: '홈', icon: '🏠', end: true },
+  { to: '/calendar', label: '달력', icon: '📅', end: false },
+  { to: '/todo', label: '투두', icon: '✅', end: false },
+]
+
+export default function Layout() {
+  const { authorName, signOut, mode } = useAuth()
+
+  return (
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-love-50">
+      <header className="flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3">
+        <div className="text-sm font-medium text-love-700">
+          {authorName ? `${authorName} 님` : ''}
+        </div>
+        <button
+          type="button"
+          onClick={signOut}
+          className="text-xs text-love-400 underline underline-offset-2"
+        >
+          {mode === 'supabase' ? '로그아웃' : '이름 재설정'}
+        </button>
+      </header>
+
+      <main className="flex-1 overflow-y-auto px-4 pb-24">
+        <Outlet />
+      </main>
+
+      <nav className="fixed bottom-0 left-1/2 w-full max-w-md -translate-x-1/2 border-t border-love-100 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+        <div className="flex justify-around">
+          {tabs.map((tab) => (
+            <NavLink
+              key={tab.to}
+              to={tab.to}
+              end={tab.end}
+              className={({ isActive }) =>
+                `flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs ${
+                  isActive ? 'text-love-600 font-semibold' : 'text-gray-400'
+                }`
+              }
+            >
+              <span className="text-lg leading-none">{tab.icon}</span>
+              {tab.label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+    </div>
+  )
+}
