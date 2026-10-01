@@ -31,10 +31,9 @@ drop policy if exists "allowed_members_select_self" on public.allowed_members;
 create policy "allowed_members_select_self" on public.allowed_members
   for select using (email = (auth.jwt() ->> 'email'));
 
--- 👇 여기를 실제 이메일 2개로 바꿔서 실행하세요.
 insert into public.allowed_members (email) values
-  ('여기에_본인_이메일_1@example.com'),
-  ('여기에_연인_이메일_2@example.com')
+  ('jiminppoppo93@gmail.com'),
+  ('eunjippoppo95@gmail.com')
 on conflict (email) do nothing;
 
 -- ----------------------------------------------------------------------------
