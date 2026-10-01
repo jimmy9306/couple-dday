@@ -384,8 +384,11 @@ export async function deleteTodo(id) {
 export function subscribeToChanges(onChange) {
   if (!isSupabaseEnabled) return () => {}
 
+  // 채널 이름이 겹치면 "같은 화면에 동시에 열린 두 구독"(예: 달력 + 그 위에 뜬
+  // 보기 팝업)이 같은 채널 인스턴스를 공유하게 되어, 이미 subscribe()된 채널에
+  // .on()을 또 거는 꼴이 되어 에러가 남 — 호출마다 고유한 채널 이름을 씀.
   const channel = supabase
-    .channel('dday-shared-data')
+    .channel(`dday-shared-data-${uid()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'relationship' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'date_records' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'todos' }, onChange)
