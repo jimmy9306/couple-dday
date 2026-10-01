@@ -7,6 +7,12 @@ import {
   subscribeToChanges,
   updateComment,
 } from '../lib/store'
+import ConfirmDialog from './ConfirmDialog'
+
+function previewText(text, max = 24) {
+  if (!text) return ''
+  return text.length > max ? `${text.slice(0, max)}…` : text
+}
 
 function formatCommentTime(iso) {
   try {
@@ -20,6 +26,7 @@ function CommentRow({ comment, isMine, onEdit, onDelete }) {
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState(comment.content)
   const [busy, setBusy] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const submit = async () => {
     if (!text.trim()) return
@@ -87,12 +94,22 @@ function CommentRow({ comment, isMine, onEdit, onDelete }) {
           </button>
           <button
             type="button"
-            onClick={() => onDelete(comment.id)}
+            onClick={() => setConfirmingDelete(true)}
             className="font-body text-[11px] text-pastel-border underline"
           >
             삭제
           </button>
         </div>
+      )}
+      {confirmingDelete && (
+        <ConfirmDialog
+          detail={previewText(comment.content)}
+          onConfirm={async () => {
+            await onDelete(comment.id)
+            setConfirmingDelete(false)
+          }}
+          onCancel={() => setConfirmingDelete(false)}
+        />
       )}
     </li>
   )
@@ -115,6 +132,7 @@ export default function RecordViewModal({
   const [newComment, setNewComment] = useState('')
   const [posting, setPosting] = useState(false)
   const [commentError, setCommentError] = useState('')
+  const [confirmingDeletePost, setConfirmingDeletePost] = useState(false)
 
   const loadComments = async () => {
     const list = await listComments(record.id)
@@ -160,7 +178,6 @@ export default function RecordViewModal({
   }
 
   const handleDeleteComment = async (id) => {
-    if (!confirm('댓글을 삭제할까요?')) return
     await deleteComment(id)
     await loadComments()
   }
@@ -187,7 +204,7 @@ export default function RecordViewModal({
                 </button>
                 <button
                   type="button"
-                  onClick={onDelete}
+                  onClick={() => setConfirmingDeletePost(true)}
                   className="font-body text-[11px] text-pastel-border underline"
                 >
                   삭제
@@ -264,6 +281,17 @@ export default function RecordViewModal({
           </div>
         </form>
       </div>
+
+      {confirmingDeletePost && (
+        <ConfirmDialog
+          detail="사진과 댓글도 함께 삭제돼요"
+          onConfirm={async () => {
+            await onDelete()
+            setConfirmingDeletePost(false)
+          }}
+          onCancel={() => setConfirmingDeletePost(false)}
+        />
+      )}
     </div>
   )
 }

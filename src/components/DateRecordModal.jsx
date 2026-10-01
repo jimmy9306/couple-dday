@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { compressPhoto } from '../lib/compress'
 import { deleteDateRecord, upsertDateRecord } from '../lib/store'
 import { HeartIcon } from './icons'
+import ConfirmDialog from './ConfirmDialog'
 
 export default function DateRecordModal({ dateStr, record, anniversaryLabel, authorName, userId, onClose, onSaved, onDeleted }) {
   const [title, setTitle] = useState(record?.title || '')
@@ -11,6 +12,7 @@ export default function DateRecordModal({ dateStr, record, anniversaryLabel, aut
   const [compressing, setCompressing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   useEffect(() => {
     return () => {
@@ -60,7 +62,6 @@ export default function DateRecordModal({ dateStr, record, anniversaryLabel, aut
 
   const handleDelete = async () => {
     if (!record?.id) return
-    if (!confirm('이 기록을 삭제할까요?')) return
     setBusy(true)
     try {
       await deleteDateRecord(record.id)
@@ -69,6 +70,7 @@ export default function DateRecordModal({ dateStr, record, anniversaryLabel, aut
       setError(err.message || '삭제에 실패했어요.')
     } finally {
       setBusy(false)
+      setConfirmingDelete(false)
     }
   }
 
@@ -132,7 +134,7 @@ export default function DateRecordModal({ dateStr, record, anniversaryLabel, aut
           {record?.id && (
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={() => setConfirmingDelete(true)}
               disabled={busy}
               className="pixel-btn font-title flex-1 border-2 border-pastel-border bg-pastel-bg py-2 text-[14px] text-pastel-text disabled:opacity-50"
             >
@@ -148,6 +150,14 @@ export default function DateRecordModal({ dateStr, record, anniversaryLabel, aut
           </button>
         </div>
       </form>
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          detail="사진과 댓글도 함께 삭제돼요"
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
     </div>
   )
 }

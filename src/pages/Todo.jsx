@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
 import { addTodo, deleteTodo, listTodos, subscribeToChanges, toggleTodo } from '../lib/store'
 import PixelPanel from '../components/PixelPanel'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { CheckIcon } from '../components/icons'
 
 export default function Todo() {
@@ -11,6 +12,7 @@ export default function Todo() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [clearId, setClearId] = useState(null)
+  const [pendingDelete, setPendingDelete] = useState(null)
 
   const load = async () => {
     setTodos(await listTodos())
@@ -49,6 +51,12 @@ export default function Todo() {
   const handleDelete = async (id) => {
     setTodos((prev) => prev.filter((t) => t.id !== id))
     await deleteTodo(id)
+  }
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+    await handleDelete(pendingDelete.id)
+    setPendingDelete(null)
   }
 
   return (
@@ -106,7 +114,7 @@ export default function Todo() {
               </div>
               <button
                 type="button"
-                onClick={() => handleDelete(todo.id)}
+                onClick={() => setPendingDelete(todo)}
                 className="font-body flex-shrink-0 text-[11px] text-pastel-accent"
               >
                 삭제
@@ -120,6 +128,14 @@ export default function Todo() {
             </div>
           ))}
         </PixelPanel>
+      )}
+
+      {pendingDelete && (
+        <ConfirmDialog
+          detail={pendingDelete.content}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </div>
   )

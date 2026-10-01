@@ -115,7 +115,6 @@ export default function Calendar() {
 
   const handleDeleteFromView = async () => {
     if (!viewRecord?.id) return
-    if (!confirm('이 기록을 삭제할까요?')) return
     await deleteDateRecord(viewRecord.id)
     setViewRecord(null)
     await refresh()

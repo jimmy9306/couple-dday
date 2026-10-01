@@ -126,5 +126,19 @@
 - [x] 76. `supabase/migration_003_comments.sql` 작성 — user_id 컬럼+백필, comments 테이블, date_records/comments/storage RLS를 본인(auth.uid())전용으로 강화, Realtime 등록. 기존 글/사진 데이터는 전혀 삭제하지 않음.
 - [x] 77. 로컬 모드로 전체 플로우 실물 테스트 — 글 작성 → 댓글 작성(본인) → `💬1` 집계 확인 → `dday_local_user_id`를 강제로 바꿔 "상대방" 시뮬레이션 → 글 수정/삭제 버튼 안 보임 + 상대 댓글 수정/삭제 안 보임 확인 → 새 댓글 추가(지민) → `💬2` 집계 확인 → 댓글 인라인 수정 확인. 실제 라이브 Supabase에도 REST로 직접 질의해서 "SQL 실행 전 에러 안 남" 가정이 맞는지 검증(위 73번).
 - [x] 78. `npm run build` 성공 확인.
-- [ ] 79. 단계별 커밋, push, 배포 확인.
-- [ ] 80. migration_003_comments.sql을 사용자에게 전달(채팅에 코드블록으로, 클립보드는 이 샌드박스에서 실제 사용자 클립보드에 안 닿는 걸 이미 확인했었음) + 실행 전/후 확인 방법 안내.
+- [x] 79. 단계별 커밋, push, 배포 확인.
+- [x] 80. migration_003_comments.sql 채팅에 코드블록으로 전달 + 실행 전/후 확인 방법 안내.
+- [x] 81. **버그 발견/수정** — 배포 직후 라이브에서 직접 재현: 달력 화면 + 그 위에 연 보기 팝업이 동시에 `subscribeToChanges()`를 호출하면 같은 이름("dday-shared-data") 채널을 또 구독하려다 "cannot add postgres_changes callbacks ... after subscribe()" 에러 발생. 호출마다 고유한 채널 이름을 쓰도록 수정, 라이브에서 재확인 완료.
+- [x] 82. SQL 실행 후 실제 두 계정(지민/은지)으로 라이브에서 전체 검증 — 기존 글 8개 모두 정확히 백필됨, 상대 글엔 수정/삭제 안 보임(양방향), 댓글 작성/권한분리(양방향), REST API로 댓글 추가 시 열려있는 화면에 새로고침 없이 반영됨(진짜 realtime 확인), 💬 개수 정확. 테스트로 단 댓글 3개는 각자 본인 권한으로 정리, 기존 게시글·사진은 전혀 건드리지 않음.
+
+## 8차 요청 (2026-10-01) — 삭제 버튼 확인 팝업 (게시글/댓글/투두)
+
+- [x] 83. `src/components/ConfirmDialog.jsx` 신규 — 픽셀 RPG 스타일 공통 확인 팝업. "정말 삭제하시겠습니까?" + 소문구(detail), 왼쪽 흰 배경 "취소" / 오른쪽 진한 핑크(`bg-pastel-border`) "삭제". 바깥 영역 탭 또는 취소 시 그냥 닫힘. 내부 `busy` state로 삭제 버튼 연타 시 한 번만 실행되게 가드.
+- [x] 84. `src/pages/Todo.jsx` — 삭제 버튼이 즉시 삭제하지 않고 `pendingDelete`(해당 todo) 상태만 세팅 → ConfirmDialog(detail=할 일 내용) 렌더 → 확인 시에만 실제 삭제.
+- [x] 85. `src/components/RecordViewModal.jsx` — 게시글 헤더의 "삭제"(detail="사진과 댓글도 함께 삭제돼요")와 각 댓글의 "삭제"(detail=댓글 내용 24자 미리보기+"…")를 각각 ConfirmDialog로 교체. 기존 `confirm('댓글을 삭제할까요?')` 네이티브 호출 제거.
+- [x] 86. `src/components/DateRecordModal.jsx` — 수정 폼 하단의 "삭제" 버튼(게시글 삭제의 또 다른 진입점)도 동일하게 ConfirmDialog로 교체, 네이티브 `confirm()` 제거.
+- [x] 87. `src/pages/Calendar.jsx`의 `handleDeleteFromView`에서 중복으로 남아있던 네이티브 `confirm()` 제거 (이제 RecordViewModal이 확인을 담당).
+- [x] 88. `grep -rn "confirm(" src/` 로 네이티브 confirm() 호출이 전부 제거됐는지 확인.
+- [x] 89. 로컬 모드 390px에서 실물 테스트 — 투두(바깥탭 취소 확인 → 실제 삭제 → 3번 연타해도 한 번만 처리), 게시글(보기팝업 헤더 삭제 + 수정폼 삭제 둘 다 "사진과 댓글도 함께 삭제돼요" 문구 확인), 댓글(24자 미리보기 말줄임 확인, 실제 삭제). 전부 통과.
+- [x] 90. `npm run build` 성공 확인.
+- [ ] 91. 단계별 커밋, push, 배포 확인.
