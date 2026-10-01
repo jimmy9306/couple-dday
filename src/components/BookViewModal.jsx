@@ -1,8 +1,17 @@
 import { useState } from 'react'
 import BookCover from './BookCover'
+import BookReviewSection from './BookReviewSection'
 import ConfirmDialog from './ConfirmDialog'
 
-export default function BookViewModal({ book, onClose, onEdit, onDelete }) {
+export default function BookViewModal({
+  book,
+  currentUserId,
+  authorName,
+  onClose,
+  onEdit,
+  onDelete,
+  onReviewsChanged,
+}) {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   return (
@@ -11,7 +20,7 @@ export default function BookViewModal({ book, onClose, onEdit, onDelete }) {
       onClick={onClose}
     >
       <div className="w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
-        <div className="border-2 border-pastel-border bg-pastel-box">
+        <div className="flex max-h-[85vh] flex-col border-2 border-pastel-border bg-pastel-box">
           <div className="flex items-center justify-between border-b-2 border-pastel-border p-3">
             <h3 className="font-title text-[14px] text-pastel-text">책 정보</h3>
             <button type="button" onClick={onClose} className="font-title text-[14px] text-pastel-text">
@@ -19,7 +28,7 @@ export default function BookViewModal({ book, onClose, onEdit, onDelete }) {
             </button>
           </div>
 
-          <div className="flex flex-col items-center gap-2 p-4">
+          <div className="flex flex-1 flex-col items-center gap-2 overflow-y-auto p-4">
             <BookCover
               title={book.title}
               coverUrl={book.coverUrl}
@@ -38,6 +47,13 @@ export default function BookViewModal({ book, onClose, onEdit, onDelete }) {
             {book.createdBy && (
               <p className="font-body text-[11px] text-pastel-accent">등록: {book.createdBy}</p>
             )}
+
+            <BookReviewSection
+              bookId={book.id}
+              currentUserId={currentUserId}
+              authorName={authorName}
+              onChanged={onReviewsChanged}
+            />
           </div>
 
           <div className="flex gap-2 border-t-2 border-pastel-border p-3">

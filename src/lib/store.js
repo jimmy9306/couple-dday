@@ -7,6 +7,7 @@ const LOCAL_KEYS = {
   todos: 'dday_todos',
   comments: 'dday_comments',
   books: 'dday_books',
+  bookReviews: 'dday_book_reviews',
 }
 
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7 // 7일
@@ -516,6 +517,110 @@ export async function deleteBook(id) {
     LOCAL_KEYS.books,
     books.filter((b) => b.id !== id)
   )
+  // 로컬 모드는 FK cascade가 없어서 한줄평도 같이 지워줌 (책 삭제 시 한줄평도 함께 삭제).
+  const reviews = readLocal(LOCAL_KEYS.bookReviews, [])
+  writeLocal(
+    LOCAL_KEYS.bookReviews,
+    reviews.filter((r) => r.bookId !== id)
+  )
+}
+
+// ---------------------------------------------------------------------------
+// book reviews (북클럽 한줄평 — 한 사람당 책 1권에 1개, 본인만 수정/삭제)
+// ---------------------------------------------------------------------------
+
+export async function listBookReviews(bookId) {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase
+      .from('book_reviews')
+      .select('*')
+      .eq('book_id', bookId)
+      .order('created_at', { ascending: true })
+    if (error) {
+      if (isTableMissing(error)) return []
+      throw error
+    }
+    return data.map((r) => ({
+      id: r.id,
+      bookId: r.book_id,
+      userId: r.user_id,
+      createdBy: r.created_by,
+      content: r.content,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    }))
+  }
+  const all = readLocal(LOCAL_KEYS.bookReviews, [])
+  return all
+    .filter((r) => r.bookId === bookId)
+    .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
+}
+
+/** 모든 책의 한줄평을 한 번에 가져옴 (목록의 💬N 표시용) */
+export async function listAllBookReviews() {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase.from('book_reviews').select('id, book_id')
+    if (error) {
+      if (isTableMissing(error)) return []
+      throw error
+    }
+    return data.map((r) => ({ id: r.id, bookId: r.book_id }))
+  }
+  const all = readLocal(LOCAL_KEYS.bookReviews, [])
+  return all.map((r) => ({ id: r.id, bookId: r.bookId }))
+}
+
+export async function addBookReview({ bookId, content, createdBy, userId }) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase
+      .from('book_reviews')
+      .insert({ book_id: bookId, content, created_by: createdBy, user_id: userId })
+    if (error) throw error
+    return
+  }
+  const all = readLocal(LOCAL_KEYS.bookReviews, [])
+  const now = new Date().toISOString()
+  all.push({
+    id: uid(),
+    bookId,
+    userId,
+    createdBy,
+    content,
+    createdAt: now,
+    updatedAt: now,
+  })
+  writeLocal(LOCAL_KEYS.bookReviews, all)
+}
+
+export async function updateBookReview(id, content) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase
+      .from('book_reviews')
+      .update({ content, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) throw error
+    return
+  }
+  const all = readLocal(LOCAL_KEYS.bookReviews, [])
+  const idx = all.findIndex((r) => r.id === id)
+  if (idx >= 0) {
+    all[idx].content = content
+    all[idx].updatedAt = new Date().toISOString()
+    writeLocal(LOCAL_KEYS.bookReviews, all)
+  }
+}
+
+export async function deleteBookReview(id) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase.from('book_reviews').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const all = readLocal(LOCAL_KEYS.bookReviews, [])
+  writeLocal(
+    LOCAL_KEYS.bookReviews,
+    all.filter((r) => r.id !== id)
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -536,6 +641,7 @@ export function subscribeToChanges(onChange) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'todos' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'book_reviews' }, onChange)
     .subscribe()
 
   return () => {

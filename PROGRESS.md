@@ -182,3 +182,16 @@
 - [x] 117. 로컬 모드 390px 실물 테스트 — ing 배지 탭 시 상세 팝업 안 열리고 확인 팝업만 뜨는 것, "아직..." 시 상태 불변, "읽었어!" 시 status=read + author 보존 + 요약 숫자(읽은 책/읽는 중) 즉시 갱신 + 배지가 읽음!으로 바뀌는 것, 읽음! 배지는 자체 반응 없이 행 클릭이 그대로 통과해 상세 팝업이 열리는 것까지 확인. 상대방 실시간 반영은 기존 `subscribeToChanges`+Realtime 구조를 그대로 타므로 별도 코드 불필요(단일 기기 로컬 모드라 실제 멀티 기기 테스트는 불가 — 라이브 배포 후 실사용으로 확인 필요).
 - [x] 118. `npm run build` 성공 확인.
 - [ ] 119. 커밋, push, 배포 확인.
+
+## 13차 요청 (2026-10-01) — 북클럽 한줄평 기능
+
+- [x] 120. `src/lib/store.js` — `book_reviews` CRUD 4종(list/listAll/add/update/delete) 추가, 기존 `isTableMissing` 가드 재사용(마이그레이션 전에도 에러로 안 깨짐), 로컬 모드는 `dday_book_reviews` 키 + `deleteBook`의 로컬 분기에서 연관 한줄평도 같이 삭제(FK cascade가 없는 로컬 모드 보정). `subscribeToChanges`에 `book_reviews` 테이블 추가.
+- [x] 121. `src/components/ConfirmDialog.jsx`에 이미 추가돼 있던 `confirmLabel`/`cancelLabel`을 한줄평 삭제에도 그대로 재사용(기본값 "삭제"/"취소").
+- [x] 122. `src/components/BookReviewSection.jsx` 신규 — 책 하나당 한줄평 최대 2개(내 것/상대 것) 표시. 내 한줄평 있으면 말풍선(작성자+내용+날짜)+수정/삭제, 없으면 "+ 한줄평 남기기" 버튼. 입력 중엔 textarea(50자 제한)+남은 글자 수+취소/저장. 상대 한줄평 있으면 말풍선(조회만), 없으면 "아직 한줄평이 없어요" 흐리게 표시. 삭제는 공용 `ConfirmDialog` 재사용(detail=한줄평 내용 20자 미리보기).
+- [x] 123. `src/components/BookViewModal.jsx` — "등록: OOO" 아래에 `BookReviewSection` 삽입, 팝업을 `max-h-[85vh]` + 본문 `overflow-y-auto`로 재구성해서 내용이 길어져도 헤더/하단 버튼은 고정된 채 본문만 스크롤되게 함. `currentUserId`/`authorName`/`onReviewsChanged` props 추가.
+- [x] 124. `src/pages/BookClub.jsx` — `listAllBookReviews()`로 책별 한줄평 개수를 집계해 목록 제목 옆에 `💬N` 표시(기존 댓글 개수 표시와 동일 패턴), `BookViewModal`에 `currentUserId`/`authorName`/`onReviewsChanged={load}` 전달, 모달 `onClose`에서도 `load()` 호출해 로컬 모드에서 개수가 즉시 갱신되게 함.
+- [x] 125. `supabase/migration_005_book_reviews.sql` 작성 — `book_reviews` 테이블((book_id,user_id) 유니크, content 50자 체크 제약, book_id는 books에 on delete cascade), RLS는 조회=allowed_members 전원, 작성/수정/삭제=본인(user_id=auth.uid())만. 모든 정책이 "자기 이름 drop 후 생성" 패턴이라 몇 번을 실행해도 안전(migration_003 재실행 버그를 반복하지 않게 처음부터 멱등하게 작성). Realtime 등록. 기존 데이터는 전혀 건드리지 않음.
+- [x] 126. 로컬 모드 390px 실물 테스트 — 💬 개수 표시, 상세 팝업에서 한줄평 섹션(내 것 추가/수정/수정취소/삭제, 상대 것 표시/수정삭제버튼 없음), 50자 제한+남은 글자 수, 삭제 확인 팝업, 책 삭제 시 한줄평도 같이 사라지는 것(로컬 cascade 보정)까지 확인. 실제 두 계정 멀티기기 realtime 동기화는 로컬 모드 특성상 테스트 불가 — 기존 comments/books와 동일한 `subscribeToChanges` 구조를 그대로 타므로 배포 후 라이브 계정으로 확인 필요.
+- [x] 127. `npm run build` 성공 확인.
+- [ ] 128. 커밋, push, 배포 확인.
+- [ ] 129. migration_005_book_reviews.sql 채팅에 코드블록으로 전달 + 실행 안내.

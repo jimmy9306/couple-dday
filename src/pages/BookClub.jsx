@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { deleteBook, listBooks, subscribeToChanges, updateBook } from '../lib/store'
+import {
+  deleteBook,
+  listAllBookReviews,
+  listBooks,
+  subscribeToChanges,
+  updateBook,
+} from '../lib/store'
 import BookCover from '../components/BookCover'
 import BookFormModal from '../components/BookFormModal'
 import BookViewModal from '../components/BookViewModal'
@@ -100,9 +106,16 @@ export default function BookClub() {
   const [editingBook, setEditingBook] = useState(null)
   const [page, setPage] = useState(1)
   const [confirmingReadBook, setConfirmingReadBook] = useState(null)
+  const [reviewCounts, setReviewCounts] = useState(new Map())
 
   const load = async () => {
-    setBooks(await listBooks())
+    const [bookList, allReviews] = await Promise.all([listBooks(), listAllBookReviews()])
+    setBooks(bookList)
+    const counts = new Map()
+    for (const r of allReviews) {
+      counts.set(r.bookId, (counts.get(r.bookId) || 0) + 1)
+    }
+    setReviewCounts(counts)
     setLoading(false)
   }
 
@@ -202,7 +215,12 @@ export default function BookClub() {
                       textClassName="text-[14px]"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="font-body truncate text-[11px] text-pastel-text">{book.title}</p>
+                      <p className="font-body truncate text-[11px] text-pastel-text">
+                        {book.title}
+                        {reviewCounts.get(book.id) > 0 && (
+                          <span className="text-pastel-border"> 💬{reviewCounts.get(book.id)}</span>
+                        )}
+                      </p>
                       {book.author && (
                         <p className="font-body truncate text-[11px] text-pastel-accent">{book.author}</p>
                       )}
@@ -256,9 +274,15 @@ export default function BookClub() {
       {viewBook && (
         <BookViewModal
           book={viewBook}
-          onClose={() => setViewBook(null)}
+          currentUserId={userId}
+          authorName={authorName}
+          onClose={() => {
+            setViewBook(null)
+            load()
+          }}
           onEdit={() => openEditFromView(viewBook)}
           onDelete={() => handleDelete(viewBook)}
+          onReviewsChanged={load}
         />
       )}
 
