@@ -1,9 +1,9 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
-import { HeartIcon, CalendarIcon, CheckIcon, GearIcon } from './icons'
+import { HomeIcon, HeartIcon, CalendarIcon, CheckIcon, GearIcon } from './icons'
 
 const tabs = [
-  { to: '/', label: '홈', Icon: null, emoji: '🕹️', end: true },
+  { to: '/', label: '홈', Icon: HomeIcon, end: true },
   { to: '/dday', label: '디데이', Icon: HeartIcon, end: false },
   { to: '/calendar', label: '달력', Icon: CalendarIcon, end: false },
   { to: '/todo', label: '투두', Icon: CheckIcon, end: false },
@@ -34,7 +34,7 @@ export default function Layout() {
 
       <nav className="fixed bottom-0 left-1/2 w-full max-w-md -translate-x-1/2 border-t-2 border-pastel-border bg-pastel-box pb-[env(safe-area-inset-bottom)]">
         <div className="flex justify-around">
-          {tabs.map(({ to, label, Icon, emoji, end }) => (
+          {tabs.map(({ to, label, Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -45,11 +45,7 @@ export default function Layout() {
                 }`
               }
             >
-              {Icon ? (
-                <Icon className="h-4 w-4" />
-              ) : (
-                <span className="text-sm leading-none">{emoji}</span>
-              )}
+              <Icon className="h-4 w-4" />
               {label}
             </NavLink>
           ))}

@@ -113,6 +113,23 @@ export function GiftIcon({ className }) {
   return <PixelIcon grid={grid} className={className} />
 }
 
+export function HomeIcon({ className }) {
+  const grid = emptyGrid()
+  // 지붕 (아래로 넓어지는 솔리드 삼각형)
+  fillRect(grid, 7, 0, 8, 0)
+  fillRect(grid, 6, 1, 9, 1)
+  fillRect(grid, 5, 2, 10, 2)
+  fillRect(grid, 4, 3, 11, 3)
+  fillRect(grid, 3, 4, 12, 4)
+  fillRect(grid, 2, 5, 13, 5)
+  fillRect(grid, 1, 6, 14, 6)
+  // 벽 (테두리만)
+  strokeRect(grid, 2, 7, 13, 14)
+  // 문
+  fillRect(grid, 7, 10, 8, 14)
+  return <PixelIcon grid={grid} className={className} />
+}
+
 export function GearIcon({ className }) {
   const grid = emptyGrid()
   strokeRect(grid, 4, 4, 11, 11)
