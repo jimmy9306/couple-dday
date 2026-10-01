@@ -73,8 +73,11 @@ export default function DateRecordModal({ dateStr, record, anniversaryLabel, aut
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-pastel-text/40 sm:items-center">
-      <div className="max-h-[85vh] w-full max-w-md overflow-y-auto border-2 border-b-0 border-pastel-border bg-pastel-box p-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:border-b-2">
-        <div className="mb-4 flex items-center justify-between">
+      <form
+        onSubmit={handleSave}
+        className="flex max-h-[90vh] w-full max-w-md flex-col border-2 border-b-0 border-pastel-border bg-pastel-box sm:border-b-2"
+      >
+        <div className="flex items-center justify-between border-b-2 border-pastel-border p-4">
           <div>
             <h3 className="font-title text-[14px] text-pastel-text">{dateStr}</h3>
             {anniversaryLabel && (
@@ -89,20 +92,22 @@ export default function DateRecordModal({ dateStr, record, anniversaryLabel, aut
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-3">
+        <div className="space-y-3 overflow-y-auto p-4">
           <input
             type="text"
             placeholder="제목"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="font-body w-full border-2 border-pastel-border bg-pastel-bg px-3 py-2 text-[11px] text-pastel-text outline-none"
+            className="font-body w-full min-w-0 border-2 border-pastel-border bg-pastel-bg px-3 py-2 text-[11px] text-pastel-text outline-none"
+            style={{ WebkitAppearance: 'none', boxSizing: 'border-box' }}
           />
           <textarea
             placeholder="메모"
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
             rows={3}
-            className="font-body w-full resize-none border-2 border-pastel-border bg-pastel-bg px-3 py-2 text-[11px] text-pastel-text outline-none"
+            className="font-body w-full min-w-0 resize-none border-2 border-pastel-border bg-pastel-bg px-3 py-2 text-[11px] text-pastel-text outline-none"
+            style={{ boxSizing: 'border-box' }}
           />
 
           <div>
@@ -114,34 +119,34 @@ export default function DateRecordModal({ dateStr, record, anniversaryLabel, aut
               <img
                 src={photoPreview}
                 alt="첨부 사진 미리보기"
-                className="mt-2 max-h-56 w-full border-2 border-pastel-border object-cover"
+                className="mt-2 max-h-[50vh] w-full border-2 border-pastel-border bg-pastel-bg object-contain"
               />
             )}
           </div>
 
           {error && <p className="font-body text-[11px] text-pastel-border">{error}</p>}
+        </div>
 
-          <div className="flex gap-2 pt-1">
-            {record?.id && (
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={busy}
-                className="pixel-btn font-title flex-1 border-2 border-pastel-border bg-pastel-bg py-2 text-[14px] text-pastel-text disabled:opacity-50"
-              >
-                삭제
-              </button>
-            )}
+        <div className="flex gap-2 border-t-2 border-pastel-border p-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          {record?.id && (
             <button
-              type="submit"
-              disabled={busy || compressing}
-              className="pixel-btn font-title flex-1 border-2 border-pastel-border bg-pastel-accent py-2 text-[14px] text-pastel-text disabled:opacity-50"
+              type="button"
+              onClick={handleDelete}
+              disabled={busy}
+              className="pixel-btn font-title flex-1 border-2 border-pastel-border bg-pastel-bg py-2 text-[14px] text-pastel-text disabled:opacity-50"
             >
-              저장
+              삭제
             </button>
-          </div>
-        </form>
-      </div>
+          )}
+          <button
+            type="submit"
+            disabled={busy || compressing}
+            className="pixel-btn font-title flex-1 border-2 border-pastel-border bg-pastel-accent py-2 text-[14px] text-pastel-text disabled:opacity-50"
+          >
+            저장
+          </button>
+        </div>
+      </form>
     </div>
   )
 }

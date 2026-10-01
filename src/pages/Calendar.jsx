@@ -12,13 +12,15 @@ import {
   subMonths,
 } from 'date-fns'
 import { useAuth } from '../lib/AuthContext'
-import { getRelationship, listDateRecords, subscribeToChanges } from '../lib/store'
+import { deleteDateRecord, getRelationship, listDateRecords, subscribeToChanges } from '../lib/store'
 import { getAnniversaryLabelForDate } from '../lib/date-utils'
 import DateRecordModal from '../components/DateRecordModal'
+import RecordViewModal from '../components/RecordViewModal'
 import PixelPanel from '../components/PixelPanel'
 import { HeartIcon } from '../components/icons'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
+const MAX_DOTS = 3
 
 export default function Calendar() {
   const { authorName } = useAuth()
@@ -26,6 +28,9 @@ export default function Calendar() {
   const [records, setRecords] = useState([])
   const [startDate, setStartDate] = useState(null)
   const [selectedDate, setSelectedDate] = useState(null)
+  const [viewRecord, setViewRecord] = useState(null)
+  const [formOpen, setFormOpen] = useState(false)
+  const [editingRecord, setEditingRecord] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const load = async () => {
@@ -44,7 +49,12 @@ export default function Calendar() {
   const recordsByDate = useMemo(() => {
     const map = new Map()
     for (const r of records) {
-      if (!map.has(r.date)) map.set(r.date, r)
+      const list = map.get(r.date) || []
+      list.push(r)
+      map.set(r.date, list)
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
     }
     return map
   }, [records])
@@ -57,15 +67,42 @@ export default function Calendar() {
     return eachDayOfInterval({ start: gridStart, end: gridEnd })
   }, [cursor])
 
-  const selectedRecord = selectedDate ? recordsByDate.get(selectedDate) || null : null
+  const selectedRecords = selectedDate ? recordsByDate.get(selectedDate) || [] : []
   const selectedAnniversary =
     selectedDate && startDate ? getAnniversaryLabelForDate(startDate, selectedDate) : null
 
-  const closeModal = () => setSelectedDate(null)
-
-  const handleSaved = async () => {
-    closeModal()
+  const refresh = async () => {
     await load()
+  }
+
+  const openCreate = () => {
+    setEditingRecord(null)
+    setFormOpen(true)
+  }
+
+  const openEditFromView = (record) => {
+    setViewRecord(null)
+    setEditingRecord(record)
+    setFormOpen(true)
+  }
+
+  const handleFormSaved = async () => {
+    setFormOpen(false)
+    setEditingRecord(null)
+    await refresh()
+  }
+
+  const handleFormClose = () => {
+    setFormOpen(false)
+    setEditingRecord(null)
+  }
+
+  const handleDeleteFromView = async () => {
+    if (!viewRecord?.id) return
+    if (!confirm('이 기록을 삭제할까요?')) return
+    await deleteDateRecord(viewRecord.id)
+    setViewRecord(null)
+    await refresh()
   }
 
   return (
@@ -101,9 +138,10 @@ export default function Calendar() {
           {days.map((day) => {
             const dateStr = format(day, 'yyyy-MM-dd')
             const inMonth = isSameMonth(day, cursor)
-            const hasRecord = recordsByDate.has(dateStr)
+            const recordCount = recordsByDate.get(dateStr)?.length || 0
             const anniversary =
               startDate && inMonth ? getAnniversaryLabelForDate(startDate, dateStr) : null
+            const isSelected = selectedDate === dateStr
 
             return (
               <button
@@ -114,9 +152,11 @@ export default function Calendar() {
                 className={`pixel-tile font-body relative mx-auto flex h-10 w-10 flex-col items-center justify-center border-2 text-[11px] ${
                   inMonth ? 'text-pastel-text' : 'text-pastel-accent'
                 } ${
-                  isToday(day)
-                    ? 'border-pastel-border bg-pastel-accent font-bold'
-                    : 'border-pastel-border bg-pastel-bg'
+                  isSelected
+                    ? 'border-pastel-border bg-pastel-box font-bold'
+                    : isToday(day)
+                      ? 'border-pastel-border bg-pastel-accent font-bold'
+                      : 'border-pastel-border bg-pastel-bg'
                 }`}
               >
                 {anniversary ? (
@@ -124,14 +164,66 @@ export default function Calendar() {
                 ) : (
                   <span>{day.getDate()}</span>
                 )}
-                {hasRecord && (
-                  <span className="absolute bottom-0.5 h-1 w-1 bg-pastel-border" />
+                {recordCount > 0 && (
+                  <span className="absolute bottom-0.5 flex gap-[2px]">
+                    {Array.from({ length: Math.min(recordCount, MAX_DOTS) }).map((_, i) => (
+                      <span key={i} className="h-1 w-1 bg-pastel-border" />
+                    ))}
+                  </span>
                 )}
               </button>
             )
           })}
         </div>
       </PixelPanel>
+
+      {selectedDate && (
+        <PixelPanel className="mb-4" innerClassName="p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <div>
+              <h3 className="font-title text-[14px] text-pastel-text">{selectedDate}</h3>
+              {selectedAnniversary && (
+                <span className="mt-1 inline-flex items-center gap-1 border-2 border-pastel-border bg-pastel-accent px-2 py-0.5 text-[11px] text-pastel-text">
+                  <HeartIcon className="h-3 w-3" />
+                  {selectedAnniversary}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={openCreate}
+            className="pixel-btn font-title mb-3 w-full border-2 border-pastel-border bg-pastel-accent py-2 text-[14px] text-pastel-text"
+          >
+            + 기록하기
+          </button>
+
+          {selectedRecords.length === 0 ? (
+            <p className="font-body text-center text-[11px] text-pastel-accent">
+              이 날의 기록이 없어요
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {selectedRecords.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setViewRecord(r)}
+                  className="pixel-tile flex w-full items-center justify-between gap-2 border-2 border-pastel-border bg-pastel-bg px-3 py-2 text-left"
+                >
+                  <span className="font-body min-w-0 flex-1 truncate text-[11px] text-pastel-text">
+                    {r.title || '(제목 없음)'}
+                  </span>
+                  <span className="font-body flex-shrink-0 text-[11px] text-pastel-accent">
+                    {r.createdBy}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </PixelPanel>
+      )}
 
       <div className="space-y-2">
         {days
@@ -151,15 +243,25 @@ export default function Calendar() {
           })}
       </div>
 
-      {selectedDate && (
+      {viewRecord && (
+        <RecordViewModal
+          record={viewRecord}
+          isOwner={viewRecord.createdBy === authorName}
+          onClose={() => setViewRecord(null)}
+          onEdit={() => openEditFromView(viewRecord)}
+          onDelete={handleDeleteFromView}
+        />
+      )}
+
+      {formOpen && (
         <DateRecordModal
           dateStr={selectedDate}
-          record={selectedRecord}
+          record={editingRecord}
           anniversaryLabel={selectedAnniversary}
           authorName={authorName}
-          onClose={closeModal}
-          onSaved={handleSaved}
-          onDeleted={handleSaved}
+          onClose={handleFormClose}
+          onSaved={handleFormSaved}
+          onDeleted={handleFormSaved}
         />
       )}
     </div>
