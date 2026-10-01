@@ -4,7 +4,7 @@ import { getRelationship, setStartDate } from '../lib/store'
 import PixelPanel from '../components/PixelPanel'
 
 export default function Settings() {
-  const { authorName, updateDisplayName, mode } = useAuth()
+  const { authorName, updateDisplayName, mode, signOut } = useAuth()
 
   const [date, setDate] = useState('')
   const [dateLoading, setDateLoading] = useState(true)
@@ -121,6 +121,14 @@ export default function Settings() {
           투두와 데이트 기록에 작성자로 표시돼요. {mode === 'local' && '(이 기기에만 저장)'}
         </p>
       </PixelPanel>
+
+      <button
+        type="button"
+        onClick={signOut}
+        className="pixel-btn font-title w-full border-2 border-pastel-border bg-pastel-bg py-2 text-[14px] text-pastel-text"
+      >
+        {mode === 'supabase' ? '로그아웃' : '이름 재설정'}
+      </button>
     </div>
   )
 }

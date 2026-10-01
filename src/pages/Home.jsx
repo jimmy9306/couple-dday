@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../lib/AuthContext'
 import { getRelationship, subscribeToChanges } from '../lib/store'
 import { getDayCount, getLoveGaugeProgress } from '../lib/date-utils'
 import PixelPanel from '../components/PixelPanel'
@@ -52,6 +53,7 @@ function MenuRow({ index, selected, label, Icon, onSelect }) {
 
 export default function Home() {
   const navigate = useNavigate()
+  const { authorName } = useAuth()
   const [dayCount, setDayCount] = useState(null)
   const [gauge, setGauge] = useState(null)
   const [selected, setSelected] = useState(0)
@@ -80,10 +82,15 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-4 pt-4">
-      <div className="flex items-center justify-center gap-2">
-        <HeartIcon className="h-4 w-4 text-pastel-border" />
-        <h1 className="font-title text-[28px] leading-none text-pastel-text">LOVE QUEST</h1>
-        <HeartIcon className="h-4 w-4 text-pastel-border" />
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center justify-center gap-2">
+          <HeartIcon className="h-4 w-4 text-pastel-border" />
+          <h1 className="font-title text-[28px] leading-none text-pastel-text">LOVE QUEST</h1>
+          <HeartIcon className="h-4 w-4 text-pastel-border" />
+        </div>
+        {authorName && (
+          <p className="font-body text-[11px] text-pastel-accent">{authorName} 님</p>
+        )}
       </div>
 
       <PixelPanel innerClassName="p-4">

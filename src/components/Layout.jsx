@@ -11,22 +11,15 @@ const tabs = [
 ]
 
 export default function Layout() {
-  const { authorName, signOut, mode } = useAuth()
+  const { mode } = useAuth()
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-pastel-bg pt-[env(safe-area-inset-top)]">
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-pastel-bg pt-[calc(env(safe-area-inset-top)+40px)]">
       {mode === 'local' && (
         <div className="font-body border-b-2 border-pastel-border bg-pastel-accent px-4 py-1.5 text-center text-[11px] text-pastel-text">
           테스트 모드 — 이 기기에만 저장돼요 (연인과 공유 안 됨)
         </div>
       )}
-
-      <header className="font-body flex items-center justify-between px-4 pt-3 pb-3 text-[11px]">
-        <div className="text-pastel-text">{authorName ? `${authorName} 님` : ''}</div>
-        <button type="button" onClick={signOut} className="text-pastel-text underline">
-          {mode === 'supabase' ? '로그아웃' : '이름 재설정'}
-        </button>
-      </header>
 
       <main className="flex-1 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)]">
         <Outlet />
