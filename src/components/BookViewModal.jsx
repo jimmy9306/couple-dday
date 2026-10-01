@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { updateBook } from '../lib/store'
 import BookCover from './BookCover'
 import BookReviewSection from './BookReviewSection'
 import ConfirmDialog from './ConfirmDialog'
@@ -11,8 +12,16 @@ export default function BookViewModal({
   onEdit,
   onDelete,
   onReviewsChanged,
+  onBookUpdated,
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [confirmingRead, setConfirmingRead] = useState(false)
+
+  const handleMarkRead = async () => {
+    await updateBook(book.id, { title: book.title, author: book.author, status: 'read' })
+    setConfirmingRead(false)
+    onBookUpdated?.()
+  }
 
   return (
     <div
@@ -37,19 +46,27 @@ export default function BookViewModal({
             />
             <h4 className="font-title mt-1 text-center text-[14px] text-pastel-text">{book.title}</h4>
             {book.author && <p className="font-body text-[11px] text-pastel-accent">{book.author}</p>}
-            <span
-              className={`font-title border-2 border-pastel-border px-2 py-0.5 text-[11px] text-pastel-text ${
-                book.status === 'read' ? 'bg-pastel-accent' : 'bg-pastel-bg'
-              }`}
-            >
-              {book.status === 'read' ? '읽음!' : '읽는 중'}
-            </span>
+            {book.status === 'read' ? (
+              <span className="font-title border-2 border-pastel-border bg-pastel-bg px-2 py-0.5 text-[11px] text-pastel-text">
+                읽음!
+              </span>
+            ) : (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={() => setConfirmingRead(true)}
+                className="font-title border-2 border-pastel-border bg-pastel-accent px-2 py-0.5 text-[11px] text-white"
+              >
+                읽는 중
+              </span>
+            )}
             {book.createdBy && (
               <p className="font-body text-[11px] text-pastel-accent">등록: {book.createdBy}</p>
             )}
 
             <BookReviewSection
               bookId={book.id}
+              bookStatus={book.status}
               currentUserId={currentUserId}
               authorName={authorName}
               onChanged={onReviewsChanged}
@@ -83,6 +100,17 @@ export default function BookViewModal({
             setConfirmingDelete(false)
           }}
           onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
+
+      {confirmingRead && (
+        <ConfirmDialog
+          message="다 읽으셨습니까?"
+          detail={book.title}
+          cancelLabel="아직..."
+          confirmLabel="읽었어!"
+          onConfirm={handleMarkRead}
+          onCancel={() => setConfirmingRead(false)}
         />
       )}
     </div>

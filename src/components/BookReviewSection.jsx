@@ -73,7 +73,13 @@ function ReviewBubble({ review, isMine, onEdit, onDelete }) {
 
 // 책 하나당 한줄평 2개(작성자당 1개)를 보여주고 추가/수정/삭제를 처리.
 // 내 한줄평만 수정/삭제 가능, 상대 것은 조회만.
-export default function BookReviewSection({ bookId, currentUserId, authorName, onChanged }) {
+export default function BookReviewSection({
+  bookId,
+  bookStatus,
+  currentUserId,
+  authorName,
+  onChanged,
+}) {
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -96,6 +102,7 @@ export default function BookReviewSection({ bookId, currentUserId, authorName, o
 
   const myReview = reviews.find((r) => r.userId === currentUserId)
   const otherReview = reviews.find((r) => r.userId !== currentUserId)
+  const canAddReview = bookStatus === 'read'
 
   const startAdd = () => {
     setDraft('')
@@ -160,15 +167,30 @@ export default function BookReviewSection({ bookId, currentUserId, authorName, o
             <ReviewBubble review={myReview} isMine onEdit={startEdit} onDelete={remove} />
           )}
 
-          {!myReview && !editing && (
-            <button
-              type="button"
-              onClick={startAdd}
-              className="pixel-btn font-title w-full border-2 border-pastel-border bg-pastel-bg py-1.5 text-[11px] text-pastel-text"
-            >
-              + 한줄평 남기기
-            </button>
-          )}
+          {!myReview &&
+            !editing &&
+            (canAddReview ? (
+              <button
+                type="button"
+                onClick={startAdd}
+                className="pixel-btn font-title w-full border-2 border-pastel-border bg-pastel-bg py-1.5 text-[11px] text-pastel-text"
+              >
+                + 한줄평 남기기
+              </button>
+            ) : (
+              <div>
+                <button
+                  type="button"
+                  disabled
+                  className="font-title w-full cursor-not-allowed border-2 border-pastel-border bg-[#E5DDE0] py-1.5 text-[11px] text-[#A8949B]"
+                >
+                  + 한줄평 남기기
+                </button>
+                <p className="font-body mt-1 text-center text-[11px] text-pastel-accent">
+                  다 읽어야 한줄평을 남길 수가 있어요.
+                </p>
+              </div>
+            ))}
 
           {editing && (
             <div className="border-2 border-pastel-border bg-pastel-bg px-2 py-1.5">
@@ -209,7 +231,9 @@ export default function BookReviewSection({ bookId, currentUserId, authorName, o
           {otherReview ? (
             <ReviewBubble review={otherReview} isMine={false} />
           ) : (
-            <p className="font-body text-[11px] text-pastel-accent">아직 한줄평이 없어요</p>
+            canAddReview && (
+              <p className="font-body text-[11px] text-pastel-accent">아직 한줄평이 없어요</p>
+            )
           )}
         </div>
       )}

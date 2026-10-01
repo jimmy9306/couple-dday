@@ -111,6 +111,7 @@ export default function BookClub() {
   const load = async () => {
     const [bookList, allReviews] = await Promise.all([listBooks(), listAllBookReviews()])
     setBooks(bookList)
+    setViewBook((cur) => (cur ? bookList.find((b) => b.id === cur.id) || null : cur))
     const counts = new Map()
     for (const r of allReviews) {
       counts.set(r.bookId, (counts.get(r.bookId) || 0) + 1)
@@ -283,6 +284,7 @@ export default function BookClub() {
           onEdit={() => openEditFromView(viewBook)}
           onDelete={() => handleDelete(viewBook)}
           onReviewsChanged={load}
+          onBookUpdated={load}
         />
       )}
 
