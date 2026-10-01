@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { getRelationship, setStartDate, subscribeToChanges } from '../lib/store'
-import { getDayCount, getUpcomingAnniversaries } from '../lib/date-utils'
+import { getAnniversariesWithinYears, getDayCount } from '../lib/date-utils'
 import PixelPanel from '../components/PixelPanel'
-import { GiftIcon } from '../components/icons'
+import { GiftIcon, HeartIcon } from '../components/icons'
+
+const YEARS_AHEAD = 5
 
 function StartDateSetup({ onSaved }) {
   const [date, setDate] = useState('')
@@ -65,7 +67,7 @@ export default function DDay() {
       if (rel?.startDate) {
         setStartDateState(rel.startDate)
         setDayCount(getDayCount(rel.startDate))
-        const list = getUpcomingAnniversaries(rel.startDate, new Date(), 5)
+        const list = getAnniversariesWithinYears(rel.startDate, YEARS_AHEAD, new Date())
         setNext(list[0] || null)
         setUpcoming(list)
       } else {
@@ -98,7 +100,7 @@ export default function DDay() {
         onSaved={(date) => {
           setStartDateState(date)
           setDayCount(getDayCount(date))
-          const list = getUpcomingAnniversaries(date, new Date(), 5)
+          const list = getAnniversariesWithinYears(date, YEARS_AHEAD, new Date())
           setNext(list[0] || null)
           setUpcoming(list)
         }}
@@ -125,20 +127,29 @@ export default function DDay() {
 
       <div className="flex items-center gap-2">
         <GiftIcon className="h-4 w-4 text-pastel-border" />
-        <h3 className="font-title text-[14px] text-pastel-text">다가오는 기념일</h3>
+        <h3 className="font-title text-[14px] text-pastel-text">다가오는 기념일 (5년 이내)</h3>
       </div>
 
       <PixelPanel innerClassName="">
         {upcoming.map((a) => (
           <div
             key={`${a.type}-${a.n}`}
-            className="flex items-center justify-between border-b-2 border-pastel-border px-4 py-3 last:border-b-0"
+            className={`flex items-center justify-between gap-2 border-b-2 border-pastel-border px-4 py-3 last:border-b-0 ${
+              a.highlight ? 'bg-pastel-accent' : ''
+            }`}
           >
-            <div>
-              <p className="font-title text-[14px] text-pastel-text">{a.label}</p>
-              <p className="font-body text-[11px] text-pastel-text">{a.dateLabel}</p>
+            <div className="flex items-center gap-2">
+              {a.highlight && <HeartIcon className="h-4 w-4 flex-shrink-0 text-pastel-border" />}
+              <div>
+                <p className="font-title text-[14px] text-pastel-text">{a.label}</p>
+                <p className="font-body text-[11px] text-pastel-text">{a.dateLabel}</p>
+              </div>
             </div>
-            <span className="font-title text-[14px] text-pastel-text">
+            <span
+              className={`font-title flex-shrink-0 text-[14px] ${
+                a.highlight ? 'text-pastel-border' : 'text-pastel-text'
+              }`}
+            >
               {a.dday === 0 ? 'D-Day' : `D-${a.dday}`}
             </span>
           </div>

@@ -87,6 +87,42 @@ export function getUpcomingAnniversaries(startDateStr, today = new Date(), count
 }
 
 /**
+ * 오늘(포함)부터 yearsAhead년 이내의 모든 기념일(100일 단위 + 매년 N주년)을
+ * 날짜순으로 전부 반환 (개수 제한 없음, 시간이 지나도 항상 "앞으로 N년치").
+ * 1000일 단위(1000, 2000, ...)와 N주년은 highlight: true로 표시.
+ */
+export function getAnniversariesWithinYears(startDateStr, yearsAhead = 5, today = new Date()) {
+  const t = startOfDay(today)
+  const cutoff = addYears(t, yearsAhead)
+  const list = []
+
+  for (let n = 1; n <= 1000; n += 1) {
+    const date = get100DayAnniversaryDate(startDateStr, n)
+    if (date > cutoff) break
+    if (date >= t) {
+      list.push({ type: 'hundred', n, label: `${n * 100}일`, date, highlight: n % 10 === 0 })
+    }
+  }
+
+  for (let n = 1; n <= 100; n += 1) {
+    const date = getYearAnniversaryDate(startDateStr, n)
+    if (date > cutoff) break
+    if (date >= t) {
+      list.push({ type: 'year', n, label: `${n}주년`, date, highlight: true })
+    }
+  }
+
+  list.sort((a, b) => a.date - b.date)
+
+  return list.map((c) => ({
+    ...c,
+    dday: differenceInCalendarDays(c.date, t),
+    dateStr: toDateStr(c.date),
+    dateLabel: format(c.date, 'yyyy.MM.dd'),
+  }))
+}
+
+/**
  * "LOVE 게이지" 진행률: 직전 기념일 -> 다음 기념일 사이에서 오늘이 얼마나 왔는지 0~1.
  * 사귄 날 자체도 기준점(0번째 마일스톤)으로 포함한다.
  */
