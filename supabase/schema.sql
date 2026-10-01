@@ -208,7 +208,20 @@ create policy "photos_delete_members" on storage.objects
   );
 
 -- ----------------------------------------------------------------------------
--- 5. Realtime: 상대방이 추가/수정하면 새로고침 없이 반영되도록 방송 대상 테이블 등록
+-- 5. 권한(GRANT): RLS 정책과는 별개로 꼭 필요함
+--    SQL Editor에서 테이블을 만들면(대시보드 Table Editor와 달리) authenticated
+--    롤에 테이블 자체의 기본 GRANT가 자동으로 안 붙어서, RLS 정책이 맞아도
+--    "permission denied for table ..." 로 전부 막힘. 그래서 명시적으로 부여함.
+-- ----------------------------------------------------------------------------
+grant usage on schema public to authenticated;
+
+grant select on public.allowed_members to authenticated;
+grant select, insert, update, delete on public.relationship to authenticated;
+grant select, insert, update, delete on public.date_records to authenticated;
+grant select, insert, update, delete on public.todos to authenticated;
+
+-- ----------------------------------------------------------------------------
+-- 6. Realtime: 상대방이 추가/수정하면 새로고침 없이 반영되도록 방송 대상 테이블 등록
 --    (이미 등록돼 있으면 조용히 건너뜀 — 여러 번 실행해도 안전)
 -- ----------------------------------------------------------------------------
 do $$
