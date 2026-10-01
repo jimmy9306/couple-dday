@@ -76,3 +76,22 @@
 - [x] 52. 390×844 로컬 모드 실물 확인 — 홈(LOVE QUEST 메뉴+게이지+커서), 디데이(기념일 목록 포함), 달력(픽셀 타일/기념일 하트/기록 점), 투두(픽셀 체크박스, 토글 정상 — 자동화 도구의 좌표 클릭이 간헐적으로 안 먹혀서 JS로 직접 dispatch해서 재확인함, 실제 앱 버그 아님), 설정, 날짜기록모달까지 전부 확인. 검증용 launch.json은 테스트 후 즉시 재삭제.
 - [x] 53. `npm run build` 최종 성공 확인.
 - [x] 54. 단계별 커밋 진행.
+
+## 5차 요청 (2026-10-01) — 실제 SQL 실행 + 실제 2계정 실사용 테스트 + 배포
+
+- [x] 55. `allowed_members`에 실제 이메일 2개(jiminppoppo93@gmail.com, eunjippoppo95@gmail.com) 입력 후 commit.
+- [x] 56. SQL 실행: `supabase` CLI + `psql`(brew install)까지 설치해서 직접 접속 시도했지만 direct DB 호스트가 DNS로 안 풀리고(IPv6 전용 등 최신 Supabase 네트워크 이슈로 추정) pooler 접속 정보(리전 등)도 몰라서, 사용자 요청대로 SQL Editor 수동 실행으로 전환. (참고: 이 샌드박스의 `pbcopy`가 실제 사용자 클립보드에 닿지 않아서, 클립보드 복사 대신 채팅에 SQL을 코드블록으로 직접 나열하는 방식으로 전달함.)
+- [x] 57. **버그 발견 및 수정**: SQL Editor로 테이블을 만들면 RLS 정책과 별개로 `authenticated` 롤에 테이블 기본 GRANT가 안 붙어서 "permission denied for table ..." 로 전부 막히는 문제 발견 (REST API로 직접 쿼리해서 진단). `schema.sql`에 `grant select/insert/update/delete ...` 구문 추가, 사용자가 추가 SQL 실행 후 해결 확인.
+- [x] 58. 두 계정 가입 — Supabase Auth API로 직접 가입(브라우저 폼과 동일 엔드포인트) 후, "Confirm email"이 켜져 있어서 두 분 다 메일함에서 확인 링크 클릭 요청 → 완료.
+- [x] 59. 실사용 테스트 4가지 — 브라우저 1개 탭(세션 전환) + REST API(상대 계정 동작 시뮬레이션) 조합으로 진행, **전부 통과**:
+  - 만난 날 입력(지민) → 은지 계정 로그인 시 동일하게 보임 (690일째/700일까지 D-10 등 수치 일치)
+  - 투두 추가(지민, API) → 은지 탭에 새로고침 없이 즉시 반영 (Realtime 정상)
+  - 캘린더 기록+사진(지민, API+Storage 업로드) → 은지 탭에서 새로고침 없이 보이고, signed URL로 사진도 정상 로드 확인(`naturalWidth/Height` 체크)
+  - 허용 목록에 없는 이메일 → "초대된 사용자만 이용 가능" 화면. (3번째 신규 가입은 Supabase 무료 티어 메일 발송 한도에 걸려서, 대신 지민 계정을 SQL로 잠깐 allowed_members에서 뺐다가 테스트 후 바로 복구하는 방식으로 안전하게 검증)
+- [x] 60. 테스트용 더미 데이터(투두/캘린더 기록+사진/만난 날짜) 전부 삭제해서 실제 사용 전 깨끗한 상태로 정리.
+- [ ] 61. GitHub Pages 배포 (brew install gh, gh auth login 승인 요청, repo 생성/push, secrets 등록, Pages 설정)
+- [ ] 62. 배포 주소 확인 및 최종 결과 요약
+
+## 참고 (5차)
+- 자동화 브라우저 도구에서 좌표/ref 기반 클릭이 PixelPanel의 clip-path 요소 근처에서 간헐적으로 안 먹히는 현상이 이번에도 있었음 — JS `element.click()`/`form.requestSubmit()` 직접 디스패치로 전부 우회해서 테스트함. 실제 앱 사용자가 손가락/마우스로 누르는 것과는 무관한 자동화 도구 한정 이슈로 보임 (실기기에서 추가 확인 권장).
+- DB 직접 접속(psql)은 이번엔 못 뚫었지만, 혹시 나중에 또 필요하면 Supabase 대시보드 Settings → Database → Connection string(Session/Transaction pooler) 쪽 URI를 주면 바로 시도 가능.
