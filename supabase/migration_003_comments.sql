@@ -75,6 +75,7 @@ create policy "comments_delete_own" on public.comments
 --    (select는 기존처럼 allowed_member 전원 조회 가능 — 그대로 둠)
 -- ----------------------------------------------------------------------------
 drop policy if exists "date_records_insert_members" on public.date_records;
+drop policy if exists "date_records_insert_own" on public.date_records;
 create policy "date_records_insert_own" on public.date_records
   for insert with check (
     exists (select 1 from public.allowed_members am where am.email = (auth.jwt() ->> 'email'))
@@ -82,10 +83,12 @@ create policy "date_records_insert_own" on public.date_records
   );
 
 drop policy if exists "date_records_update_members" on public.date_records;
+drop policy if exists "date_records_update_own" on public.date_records;
 create policy "date_records_update_own" on public.date_records
   for update using (user_id = auth.uid());
 
 drop policy if exists "date_records_delete_members" on public.date_records;
+drop policy if exists "date_records_delete_own" on public.date_records;
 create policy "date_records_delete_own" on public.date_records
   for delete using (user_id = auth.uid());
 
@@ -95,6 +98,7 @@ create policy "date_records_delete_own" on public.date_records
 --    자동 저장하므로, 기존에 올라간 사진들도 이미 owner가 올바르게 채워져 있음.
 -- ----------------------------------------------------------------------------
 drop policy if exists "photos_delete_members" on storage.objects;
+drop policy if exists "photos_delete_own" on storage.objects;
 create policy "photos_delete_own" on storage.objects
   for delete using (
     bucket_id = 'photos' and owner = auth.uid()

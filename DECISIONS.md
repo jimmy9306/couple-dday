@@ -201,3 +201,17 @@
   PixelPanel/아이콘들과 달리 책 "등록 개수만큼 동적으로 늘어나는" UI라 고정 SVG grid보다
   배열 기반 렌더링이 다루기 쉬웠음. 최대 표시 개수(2단 × 8칸 = 16권)를 넘으면 더 그리지 않고
   "꽉 찬 상태"로 고정 — 요약 숫자(N권)는 실제 전체 개수를 쓰므로 정확함.
+
+## 17. migration_003의 정책 재실행 버그 수정 (재실행 시 "already exists" 에러)
+- SQL Editor에서 `ERROR: 42710: policy "date_records_insert_own" for table "date_records"
+  already exists` 발생 — 원인 조사 결과 `migration_004_books.sql`에는 `date_records`/`comments`
+  관련 SQL이 전혀 없음(주석에서만 언급)을 확인했고, 실제 원인은 `migration_003_comments.sql`
+  자체에 있던 버그였음: `date_records_insert_own`/`update_own`/`delete_own`,
+  `photos_delete_own` 4개 정책이 **옛 이름(`..._members`)만 drop하고 자기 자신과 같은
+  이름은 drop하지 않은 채 create**하고 있어서, 이미 한 번 적용된 DB에 003을 다시 실행하면
+  (또는 재확인 차 다시 붙여넣으면) 두 번째 create에서 "이미 있다"는 에러가 났음.
+  `schema.sql`은 모든 정책이 항상 "구이름 drop + 신이름(자기자신) drop" 2줄을 갖춰 애초부터
+  멱등이었고, `migration_004_books.sql`도 처음부터 모든 정책이 자기 이름을 drop한 뒤
+  create해서 멱등이었음 — 이번에 003의 4곳만 동일한 패턴으로 맞춰 고침.
+- 이 수정은 **이미 적용된 운영 DB의 정책 내용 자체는 전혀 바꾸지 않음**(동일한 이름/조건으로
+  drop 후 재생성이라 결과 동일) — 그냥 "몇 번을 실행해도 안전"하게만 만든 것.

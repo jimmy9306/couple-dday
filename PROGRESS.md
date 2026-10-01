@@ -157,3 +157,10 @@
 - [x] 101. `npm run build` 성공 확인.
 - [ ] 102. 단계별 커밋, push, 배포 확인.
 - [ ] 103. migration_004_books.sql 채팅에 코드블록으로 전달 + 실행 전/후 확인 방법 안내.
+
+## 10차 요청 (2026-10-01) — migration_003 재실행 에러 수정
+
+- [x] 104. `migration_004_books.sql`에 003(date_records/comments) 내용이 섞여 있는지 grep으로 확인 — 섞여있지 않음(주석에서만 비교 언급), 에러의 실제 원인은 `migration_003_comments.sql` 자체의 멱등성 버그였음을 확인.
+- [x] 105. `migration_003_comments.sql`의 `date_records_insert_own`/`update_own`/`delete_own`, `photos_delete_own` 4개 정책 — 옛 이름만 drop하고 자기 자신 이름은 drop 안 하던 버그 수정(자기 이름 drop 1줄씩 추가). `schema.sql`/`migration_004_books.sql`은 애초부터 멱등이라 수정 불필요(grep으로 재확인).
+- [ ] 106. 수정 사항 커밋/푸시(SQL이라 배포 파이프라인과는 무관, 코드 빌드 영향 없음).
+- [ ] 107. migration_004_books.sql만 다시 전달(003은 이미 라이브에 적용/검증 완료 상태라 재실행 불필요, 지금 재실행해도 안전은 하지만 필수는 아님).
