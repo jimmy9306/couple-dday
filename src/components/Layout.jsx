@@ -28,7 +28,7 @@ export default function Layout() {
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-4 pb-24">
+      <main className="flex-1 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)]">
         <Outlet />
       </main>
 
