@@ -101,3 +101,17 @@
 ## 참고 (5차)
 - 자동화 브라우저 도구에서 좌표/ref 기반 클릭이 PixelPanel의 clip-path 요소 근처에서 간헐적으로 안 먹히는 현상이 이번에도 있었음 — JS `element.click()`/`form.requestSubmit()` 직접 디스패치로 전부 우회해서 테스트함. 실제 앱 사용자가 손가락/마우스로 누르는 것과는 무관한 자동화 도구 한정 이슈로 보임 (실기기에서 추가 확인 권장).
 - DB 직접 접속(psql)은 이번엔 못 뚫었지만, 혹시 나중에 또 필요하면 Supabase 대시보드 Settings → Database → Connection string(Session/Transaction pooler) 쪽 URI를 주면 바로 시도 가능.
+
+## 6차 요청 (2026-10-01) — 아이폰 실사용 피드백 6건 수정
+
+- [x] 63. [1] PWA 상단 잘림 — index.html에 apple-mobile-web-app-capable/status-bar-style(black-translucent) 메타 추가, Layout.jsx의 safe-area-inset-top 패딩을 최상위 컨테이너로 이동(로컬모드 배너가 있을 때도 안전하게 적용되도록). 하단 탭바 safe-area-inset-bottom은 기존에 이미 적용돼 있던 것 확인.
+- [x] 64. [2,3] 달력 날짜별 다중 기록 — `RecordViewModal.jsx` 신규(보기 전용 팝업, 작성자만 수정/삭제 버튼), `Calendar.jsx` 전면 개편(날짜 탭 → 달력 아래 기록 목록+"+ 기록하기", 점 표시는 기록 개수만큼 최대 3개), `DateRecordModal.jsx`는 max-h-[90vh]+내부 스크롤 구조로 재구성하고 사진을 object-contain으로 변경. 기존 date_records 스키마가 날짜당 여러 행을 이미 허용해서 **DB 마이그레이션 불필요** (기존 9/26 기록 등 그대로 보존됨, 건드리지 않음).
+- [x] 65. [4] 투두 하단 가림 — Layout.jsx `<main>`의 padding-bottom을 고정 96px → `calc(env(safe-area-inset-bottom)+6rem)`으로 변경 (모든 화면에 공통 적용).
+- [x] 66. [5] 설정 날짜 입력칸 삐져나옴 — index.css에 `input[type=date]{-webkit-appearance:none;width:100%;min-width:0;box-sizing:border-box}` 전역 규칙 추가.
+- [x] 67. [6] 앱 아이콘 재제작 — `scripts/gen-icons.mjs`를 32x32 그리드 기반으로 전면 교체 (하트 본체/외곽선/1px 하드섀도우/하이라이트 2~3픽셀/배경 반짝이 2개, 5색 팔레트만 사용), nearest-neighbor로 180/192/512/512(maskable) 생성. index.html·vite.config.js의 아이콘 경로는 파일명이 그대로라 변경 불필요.
+- [x] 68. 로컬 모드로 6개 항목 전부 브라우저(390px) 실물 확인 — 다중 기록 추가/보기/수정/권한분리/삭제, 투두 15개 추가 후 스크롤+하단여백, 날짜 입력칸 폭, 아이콘 PNG 직접 확인. iOS 시뮬레이터는 이 Mac에 전체 Xcode가 없어서(Command Line Tools만 설치됨) 사용 불가 — 사용자에게 Xcode 설치 + `sudo xcode-select` 안내만 전달하고 조용히 다른 방법으로 대체하지 않음(명시적으로 고지).
+- [x] 69. `npm run build` 성공 확인, 항목별로 커밋 5개(1 / 2+3 / 4 / 5 / 6)로 분리.
+- [ ] 70. push 및 배포 확인.
+
+## 참고 (6차)
+- Chromium 기반 브라우저 패널은 iOS의 `env(safe-area-inset-*)`와 `input[type=date]` 네이티브 렌더링을 완전히 동일하게 재현하지 못함 — 코드 수정은 iOS Safari 공식 best practice를 따랐지만, 실제 아이폰(특히 노치/다이나믹아일랜드 기종)에서 한 번 더 육안 확인을 권장.
