@@ -230,3 +230,25 @@
 - migration_003에서 발견했던 "재실행 시 already-exists 에러"(결정 17번) 버그를 반복하지
   않도록, migration_005의 모든 `create policy`는 처음부터 "자기 자신과 동일한 이름을
   drop policy if exists 한 뒤 생성"하는 패턴으로 작성함.
+
+## 19. PWA 자동 업데이트 — 기본 injectRegister 대신 virtual:pwa-register + 강제 새로고침
+- "상대방이 등록한 책만 한줄평 비활성화가 안 먹는다"는 버그 신고를 코드 레벨로 재현하려
+  했으나, `status`만 비교하는 로직이라 등록자(userId/createdBy)와는 전혀 엮여있지 않았고,
+  로컬 모드에서 "내 책/상대 책 × 읽는 중/읽음" 조합을 전부 재현해도 정상 동작함을 확인함
+  (17번 항목 참고). 즉 코드 버그가 아니라, **배포 직후 이미 열려있던 PWA 세션이 옛 JS를
+  계속 실행 중이었을 가능성**이 훨씬 유력하다고 판단함.
+- 원인: `vite-plugin-pwa`의 기본 주입 스크립트(`injectRegister` 기본값)는 단순히
+  `navigator.serviceWorker.register()`만 호출하고 끝남 — 새 서비스워커가 설치/활성화돼도
+  이미 로드되어 메모리에서 실행 중인 페이지의 JS는 전혀 바뀌지 않고, 사용자가 탭을
+  완전히 새로고침(또는 PWA를 강제 종료 후 재실행)해야만 새 번들을 받아옴. 홈 화면에
+  띄워두고 오래 켜두는 폰 환경에서 특히 체감되는 문제.
+- 수정: `injectRegister: false`로 기본 스크립트를 끄고, `src/lib/registerServiceWorker.js`에서
+  `virtual:pwa-register`의 `registerSW()`를 직접 호출 + `navigator.serviceWorker`의
+  `controllerchange` 이벤트(새 서비스워커가 이 탭의 컨트롤을 넘겨받는 순간)에서 1회
+  자동 `window.location.reload()`를 걸어둠. `workbox.skipWaiting`/`clientsClaim`을 명시적으로
+  켜서 새 서비스워커가 "대기" 없이 즉시 활성화+모든 열린 탭을 claim하도록 함 — 이 둘이
+  합쳐져야 "배포하면 열려있던 세션도 자동으로 최신 버전으로 넘어간다"가 실제로 보장됨.
+  1시간 주기 `registration.update()`도 추가해 브라우저의 자체 업데이트 확인 타이밍에만
+  의존하지 않게 함.
+- 이번 배포 이후부터 효과가 생기므로, **이번 한 번만큼은** 두 사람 모두 수동으로 앱을
+  완전히 새로고침(또는 재실행)해서 이 수정 자체를 받아야 함(이후부터는 자동).
