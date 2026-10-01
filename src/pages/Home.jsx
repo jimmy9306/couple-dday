@@ -4,12 +4,13 @@ import { useAuth } from '../lib/AuthContext'
 import { getRelationship, subscribeToChanges } from '../lib/store'
 import { getDayCount, getLoveGaugeProgress } from '../lib/date-utils'
 import PixelPanel from '../components/PixelPanel'
-import { HeartIcon, CalendarIcon, CheckIcon, GearIcon } from '../components/icons'
+import { HeartIcon, CalendarIcon, CheckIcon, BookIcon, GearIcon } from '../components/icons'
 
 const MENU_ITEMS = [
   { label: '디데이', to: '/dday', Icon: HeartIcon },
   { label: '달력', to: '/calendar', Icon: CalendarIcon },
   { label: '투두', to: '/todo', Icon: CheckIcon },
+  { label: '북클럽', to: '/bookclub', Icon: BookIcon },
   { label: '설정', to: '/settings', Icon: GearIcon },
 ]
 

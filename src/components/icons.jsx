@@ -130,6 +130,16 @@ export function HomeIcon({ className }) {
   return <PixelIcon grid={grid} className={className} />
 }
 
+export function BookIcon({ className }) {
+  const grid = emptyGrid()
+  strokeRect(grid, 2, 2, 13, 13)
+  fillRect(grid, 4, 2, 4, 13)
+  fillRect(grid, 6, 5, 11, 5)
+  fillRect(grid, 6, 8, 11, 8)
+  fillRect(grid, 6, 11, 11, 11)
+  return <PixelIcon grid={grid} className={className} />
+}
+
 export function GearIcon({ className }) {
   const grid = emptyGrid()
   strokeRect(grid, 4, 4, 11, 11)

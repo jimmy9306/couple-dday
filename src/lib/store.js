@@ -6,6 +6,7 @@ const LOCAL_KEYS = {
   records: 'dday_records',
   todos: 'dday_todos',
   comments: 'dday_comments',
+  books: 'dday_books',
 }
 
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7 // 7일
@@ -377,6 +378,147 @@ export async function deleteTodo(id) {
 }
 
 // ---------------------------------------------------------------------------
+// books (북클럽 — 둘 다 추가/수정/삭제 가능, 소유자 제한 없음)
+// ---------------------------------------------------------------------------
+
+async function resolveBookCoverUrl(coverPath) {
+  if (!coverPath) return null
+  const { data, error } = await supabase.storage
+    .from('book-covers')
+    .createSignedUrl(coverPath, SIGNED_URL_TTL)
+  if (error) {
+    console.error('표지 URL 생성 실패:', error)
+    return null
+  }
+  return data.signedUrl
+}
+
+export async function listBooks() {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase
+      .from('books')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) {
+      if (isTableMissing(error)) return []
+      throw error
+    }
+    return Promise.all(
+      data.map(async (b) => ({
+        id: b.id,
+        title: b.title,
+        author: b.author,
+        status: b.status,
+        coverUrl: await resolveBookCoverUrl(b.cover_path),
+        createdBy: b.created_by,
+        createdAt: b.created_at,
+        userId: b.user_id,
+      }))
+    )
+  }
+  const books = readLocal(LOCAL_KEYS.books, [])
+  return [...books].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+}
+
+/**
+ * @param {object} book { title, author, status, coverFile?, createdBy, userId }
+ */
+export async function addBook(book) {
+  const { title, author, status, coverFile, createdBy, userId } = book
+
+  if (isSupabaseEnabled) {
+    let coverPath
+    if (coverFile) {
+      const path = `${uid()}-${coverFile.name || 'cover.jpg'}`
+      const { error: uploadError } = await supabase.storage
+        .from('book-covers')
+        .upload(path, coverFile, { upsert: false })
+      if (uploadError) throw uploadError
+      coverPath = path
+    }
+    const { error } = await supabase.from('books').insert({
+      title,
+      author,
+      status,
+      cover_path: coverPath,
+      created_by: createdBy,
+      user_id: userId,
+    })
+    if (error) throw error
+    return
+  }
+
+  const books = readLocal(LOCAL_KEYS.books, [])
+  let coverUrl = null
+  if (coverFile) coverUrl = await fileToDataUrl(coverFile)
+  books.push({
+    id: uid(),
+    title,
+    author,
+    status,
+    coverUrl,
+    createdBy,
+    userId,
+    createdAt: new Date().toISOString(),
+  })
+  writeLocal(LOCAL_KEYS.books, books)
+}
+
+/**
+ * @param {string} id
+ * @param {object} patch { title, author, status, coverFile? }
+ * coverFile 없으면 기존 표지 유지.
+ */
+export async function updateBook(id, patch) {
+  const { title, author, status, coverFile } = patch
+
+  if (isSupabaseEnabled) {
+    let coverPath
+    if (coverFile) {
+      const path = `${uid()}-${coverFile.name || 'cover.jpg'}`
+      const { error: uploadError } = await supabase.storage
+        .from('book-covers')
+        .upload(path, coverFile, { upsert: false })
+      if (uploadError) throw uploadError
+      coverPath = path
+    }
+    const payload = { title, author, status }
+    if (coverPath) payload.cover_path = coverPath
+    const { error } = await supabase.from('books').update(payload).eq('id', id)
+    if (error) throw error
+    return
+  }
+
+  const books = readLocal(LOCAL_KEYS.books, [])
+  const idx = books.findIndex((b) => b.id === id)
+  if (idx >= 0) {
+    let coverUrl
+    if (coverFile) coverUrl = await fileToDataUrl(coverFile)
+    books[idx] = {
+      ...books[idx],
+      title,
+      author,
+      status,
+      ...(coverUrl ? { coverUrl } : {}),
+    }
+    writeLocal(LOCAL_KEYS.books, books)
+  }
+}
+
+export async function deleteBook(id) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase.from('books').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const books = readLocal(LOCAL_KEYS.books, [])
+  writeLocal(
+    LOCAL_KEYS.books,
+    books.filter((b) => b.id !== id)
+  )
+}
+
+// ---------------------------------------------------------------------------
 // realtime: 상대방이 추가/수정/삭제하면 콜백을 호출해서 화면을 새로고침 없이 갱신
 // (localStorage 모드는 이 기기 하나뿐이라 구독할 게 없음 -> no-op)
 // ---------------------------------------------------------------------------
@@ -393,6 +535,7 @@ export function subscribeToChanges(onChange) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'date_records' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'todos' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, onChange)
     .subscribe()
 
   return () => {

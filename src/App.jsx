@@ -6,6 +6,7 @@ import Home from './pages/Home'
 import DDay from './pages/DDay'
 import Calendar from './pages/Calendar'
 import Todo from './pages/Todo'
+import BookClub from './pages/BookClub'
 import Settings from './pages/Settings'
 import PixelPanel from './components/PixelPanel'
 
@@ -78,6 +79,7 @@ function AppRoutes() {
         <Route path="dday" element={<DDay />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="todo" element={<Todo />} />
+        <Route path="bookclub" element={<BookClub />} />
         <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

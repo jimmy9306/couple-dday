@@ -142,3 +142,18 @@
 - [x] 89. 로컬 모드 390px에서 실물 테스트 — 투두(바깥탭 취소 확인 → 실제 삭제 → 3번 연타해도 한 번만 처리), 게시글(보기팝업 헤더 삭제 + 수정폼 삭제 둘 다 "사진과 댓글도 함께 삭제돼요" 문구 확인), 댓글(24자 미리보기 말줄임 확인, 실제 삭제). 전부 통과.
 - [x] 90. `npm run build` 성공 확인.
 - [ ] 91. 단계별 커밋, push, 배포 확인.
+
+## 9차 요청 (2026-10-01) — 북클럽 기능 신설
+
+- [x] 92. `src/components/icons.jsx`에 `BookIcon`(16x16 픽셀 책) 추가, `src/pages/Home.jsx`의 홈 메뉴에 투두↔설정 사이 "북클럽" 항목 추가(하단 탭바는 요구사항대로 건드리지 않음), `src/App.jsx`에 `/bookclub` 라우트 추가.
+- [x] 93. `src/pages/BookClub.jsx` 신규 — 화면 중앙에 직접 그린 픽셀 책장(나무 선반 2단, div 기반 색색 책등, 등록 수만큼 채워지고 최대 표시 개수(16권) 넘으면 꽉 찬 상태 유지), 책장 위 "읽은 책 N권 / 읽는 중 N권" 요약, 책장 탭하면 아래로 목록이 펼쳐짐(토글). 목록 정렬은 읽는 중 먼저 → 읽음, 각각 최근 등록순.
+- [x] 94. `src/components/BookCover.jsx` 신규 — 표지 사진 있으면 그대로, 없으면 제목 첫 글자 + 제목 해시 기반 팔레트색(box/accent 번갈아)으로 즉석 픽셀 표지를 렌더링(저장하지 않고 매번 계산이라 항상 같은 책은 같은 색).
+- [x] 95. 목록 행의 상태 표시 — 읽음은 "읽음!" 스탬프가 나타날 때 scale 0→1.2→1로 튀어오르는 애니메이션(`index.css`의 `pixel-stamp-pop`, 기존 `pixel-clear-pop`과 동일하게 `steps()`로 픽셀 느낌 유지), 읽는 중은 "ing" 뒤에 점이 `.`→`..`→`...`→`..` 순으로 450ms 간격 반복되는 `IngDots` 컴포넌트.
+- [x] 96. `src/components/BookFormModal.jsx` 신규(추가/수정 겸용) — 제목(필수)/저자/상태(읽는 중·읽음 토글 버튼)/표지 사진(선택, 기존 `compressPhoto`로 업로드 전 자동 압축). `src/components/BookViewModal.jsx` 신규 — 큰 표지+제목+저자+상태+등록자 이름, 수정/삭제 버튼. 삭제는 기존 공용 `ConfirmDialog` 재사용(detail=책 제목).
+- [x] 97. 오른쪽 아래 픽셀 "+" 버튼 — `Layout.jsx`의 하단 탭바와 동일한 `fixed bottom-0 left-1/2 max-w-md -translate-x-1/2` 중앙정렬 트릭을 그대로 써서, 데스크톱 폭에서도 앱 컬럼 안쪽에 고정되고 탭바에 가리지 않도록 안전 여백을 둠.
+- [x] 98. `src/lib/store.js` — `books` CRUD 4종(list/add/update/delete) + `resolveBookCoverUrl`('book-covers' 버킷 signed URL) 추가. comments와 동일하게 `isTableMissing`(PGRST205/42P01) 가드를 적용해 마이그레이션 전에도 에러로 화면이 깨지지 않게 함. 로컬 모드는 `dday_books` localStorage 키+ 표지는 `fileToDataUrl`로 저장. `subscribeToChanges`에 `books` 테이블 리스너 추가.
+- [x] 99. `supabase/migration_004_books.sql` 신규 — `books` 테이블(제목/저자/상태 체크 제약/표지 경로/등록자 user_id) + RLS는 **본인 제한 없이 허용된 사용자(둘) 전원에게 select/insert/update/delete 전부 허용**(요구사항이 "둘 다 가능"이라 date_records/comments의 본인 전용 패턴과 의도적으로 다르게 설계), `book-covers` 비공개 스토리지 버킷 신설(삭제도 둘 다 가능 — photos 버킷의 본인만 삭제 정책과 다름), Realtime 방송 대상에 `books` 추가. 기존 테이블/데이터는 전혀 건드리지 않음.
+- [x] 100. 로컬 모드 390px에서 실물 테스트 — 빈 책장(책 0권) → 책 4권 추가(읽는 중/읽음 섞어서) → 책장에 책등 색색으로 채워짐 + 요약 숫자 정확 → 목록 펼치기/접기 → 정렬(읽는 중 먼저, 각각 최근순) 확인 → 표지 없는 책 첫 글자 자동 생성 확인 → 상세 팝업(큰 표지/저자/상태/등록자) → 삭제 확인 팝업(취소 시 안 지워짐, 확인 시 실제 삭제) → 수정(상태 변경 후 재정렬 확인) → 아주 긴 제목/저자 말줄임 확인. 전부 통과.
+- [x] 101. `npm run build` 성공 확인.
+- [ ] 102. 단계별 커밋, push, 배포 확인.
+- [ ] 103. migration_004_books.sql 채팅에 코드블록으로 전달 + 실행 전/후 확인 방법 안내.
