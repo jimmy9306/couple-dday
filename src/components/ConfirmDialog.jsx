@@ -7,6 +7,8 @@ import PixelPanel from './PixelPanel'
 export default function ConfirmDialog({
   message = '정말 삭제하시겠습니까?',
   detail,
+  confirmLabel = '삭제',
+  cancelLabel = '취소',
   onConfirm,
   onCancel,
 }) {
@@ -39,7 +41,7 @@ export default function ConfirmDialog({
               onClick={onCancel}
               className="pixel-btn font-title flex-1 border-2 border-pastel-border bg-pastel-bg py-2 text-[14px] text-pastel-text"
             >
-              취소
+              {cancelLabel}
             </button>
             <button
               type="button"
@@ -47,7 +49,7 @@ export default function ConfirmDialog({
               disabled={busy}
               className="pixel-btn font-title flex-1 border-2 border-pastel-border bg-pastel-border py-2 text-[14px] text-pastel-bg disabled:opacity-50"
             >
-              삭제
+              {confirmLabel}
             </button>
           </div>
         </PixelPanel>

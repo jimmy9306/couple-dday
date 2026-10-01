@@ -173,3 +173,12 @@
 - [x] 111. 로컬 모드 390px에서 책 12~14권으로 실물 테스트 — 배지 색/크기/고정폭 확인, 페이지 1→2→3 이동, 마지막 페이지 삭제로 페이지 수 줄어들 때 자동으로 앞 페이지로 이동하는 것까지 확인, 책 추가 시 1페이지로 복귀 확인.
 - [x] 112. `npm run build` 성공 확인.
 - [ ] 113. 커밋, push, 배포 확인.
+
+## 12차 요청 (2026-10-01) — 북클럽 "ing" 배지 탭으로 완독 처리
+
+- [x] 114. `src/components/ConfirmDialog.jsx`에 `confirmLabel`/`cancelLabel` props 추가(기본값 "삭제"/"취소"로 기존 호출부는 전혀 안 바뀜) — 공용 팝업 컴포넌트 그대로 재사용하면서 문구만 바꿀 수 있게 함.
+- [x] 115. `src/pages/BookClub.jsx` — `StatusBadge`의 ing 배지를 클릭 가능하게 변경(`onRequestMarkRead`), 클릭 시 `e.stopPropagation()`으로 책 상세 팝업이 같이 안 열리게 막음. "읽음!" 배지는 onClick 자체가 없어 탭하면 그대로 행(row) 클릭이 버블링돼 상세 팝업이 열림(기존 동작 유지, 되돌리기는 거기서 수정으로).
+- [x] 116. "다 읽으셨습니까?" 확인 팝업(`confirmingReadBook` state) — detail에 책 제목, cancelLabel="아직...", confirmLabel="읽었어!". 확인 시 `updateBook(id, { title, author, status: 'read' })` 호출(title/author는 기존 값 그대로 보존해서 날아가지 않게 함) 후 `load()`로 목록/요약 숫자 즉시 갱신. 배지가 read로 바뀌면 기존 `pixel-stamp-pop` 애니메이션이 자동 재생됨(같은 DOM 노드에 새 animation class가 적용되는 CSS 기본 동작).
+- [x] 117. 로컬 모드 390px 실물 테스트 — ing 배지 탭 시 상세 팝업 안 열리고 확인 팝업만 뜨는 것, "아직..." 시 상태 불변, "읽었어!" 시 status=read + author 보존 + 요약 숫자(읽은 책/읽는 중) 즉시 갱신 + 배지가 읽음!으로 바뀌는 것, 읽음! 배지는 자체 반응 없이 행 클릭이 그대로 통과해 상세 팝업이 열리는 것까지 확인. 상대방 실시간 반영은 기존 `subscribeToChanges`+Realtime 구조를 그대로 타므로 별도 코드 불필요(단일 기기 로컬 모드라 실제 멀티 기기 테스트는 불가 — 라이브 배포 후 실사용으로 확인 필요).
+- [x] 118. `npm run build` 성공 확인.
+- [ ] 119. 커밋, push, 배포 확인.

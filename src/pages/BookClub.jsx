@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { deleteBook, listBooks, subscribeToChanges } from '../lib/store'
+import { deleteBook, listBooks, subscribeToChanges, updateBook } from '../lib/store'
 import BookCover from '../components/BookCover'
 import BookFormModal from '../components/BookFormModal'
 import BookViewModal from '../components/BookViewModal'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 const SHELF_ROWS = 2
 const SLOTS_PER_ROW = 8
@@ -65,7 +66,7 @@ function IngDots() {
   return <span>{'.'.repeat(pattern[step])}</span>
 }
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, onRequestMarkRead }) {
   if (status === 'read') {
     return (
       <span className="pixel-stamp-pop font-title inline-flex w-14 flex-shrink-0 items-center justify-center border-2 border-pastel-border bg-pastel-bg px-1.5 py-0.5 text-[11px] text-pastel-text">
@@ -74,7 +75,15 @@ function StatusBadge({ status }) {
     )
   }
   return (
-    <span className="font-title inline-flex w-14 flex-shrink-0 items-center justify-center border-2 border-pastel-border bg-pastel-accent px-1.5 py-0.5 text-[11px] text-white">
+    <span
+      role="button"
+      tabIndex={0}
+      onClick={(e) => {
+        e.stopPropagation()
+        onRequestMarkRead?.()
+      }}
+      className="font-title inline-flex w-14 flex-shrink-0 items-center justify-center border-2 border-pastel-border bg-pastel-accent px-1.5 py-0.5 text-[11px] text-white"
+    >
       ing
       <IngDots />
     </span>
@@ -90,6 +99,7 @@ export default function BookClub() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingBook, setEditingBook] = useState(null)
   const [page, setPage] = useState(1)
+  const [confirmingReadBook, setConfirmingReadBook] = useState(null)
 
   const load = async () => {
     setBooks(await listBooks())
@@ -147,6 +157,17 @@ export default function BookClub() {
     await load()
   }
 
+  const handleMarkRead = async () => {
+    if (!confirmingReadBook) return
+    await updateBook(confirmingReadBook.id, {
+      title: confirmingReadBook.title,
+      author: confirmingReadBook.author,
+      status: 'read',
+    })
+    setConfirmingReadBook(null)
+    await load()
+  }
+
   return (
     <div className="pt-6">
       <h2 className="font-title mb-4 text-[14px] text-pastel-text">북클럽</h2>
@@ -186,7 +207,10 @@ export default function BookClub() {
                         <p className="font-body truncate text-[11px] text-pastel-accent">{book.author}</p>
                       )}
                     </div>
-                    <StatusBadge status={book.status} />
+                    <StatusBadge
+                      status={book.status}
+                      onRequestMarkRead={() => setConfirmingReadBook(book)}
+                    />
                   </button>
                 ))}
               </div>
@@ -245,6 +269,17 @@ export default function BookClub() {
           userId={userId}
           onClose={handleFormClose}
           onSaved={handleFormSaved}
+        />
+      )}
+
+      {confirmingReadBook && (
+        <ConfirmDialog
+          message="다 읽으셨습니까?"
+          detail={confirmingReadBook.title}
+          cancelLabel="아직..."
+          confirmLabel="읽었어!"
+          onConfirm={handleMarkRead}
+          onCancel={() => setConfirmingReadBook(null)}
         />
       )}
     </div>
