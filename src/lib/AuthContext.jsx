@@ -2,6 +2,17 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { isSupabaseEnabled, supabase } from './supabase'
 
 const LOCAL_NAME_KEY = 'dday_local_name'
+const LOCAL_USER_ID_KEY = 'dday_local_user_id'
+
+function getOrCreateLocalUserId() {
+  if (typeof window === 'undefined') return null
+  let id = localStorage.getItem(LOCAL_USER_ID_KEY)
+  if (!id) {
+    id = crypto.randomUUID()
+    localStorage.setItem(LOCAL_USER_ID_KEY, id)
+  }
+  return id
+}
 
 const AuthContext = createContext(null)
 
@@ -102,10 +113,15 @@ export function AuthProvider({ children }) {
 
   const isAuthed = isSupabaseEnabled ? Boolean(user) : Boolean(localName)
 
+  // 작성자 권한 판별에 쓰는 안정적인 식별자. Supabase 모드는 실제 auth.uid(),
+  // 로컬(개발) 모드는 이 기기에 고정된 임의 id (표시 이름을 바꿔도 유지됨).
+  const userId = isSupabaseEnabled ? user?.id || null : getOrCreateLocalUserId()
+
   const value = useMemo(
     () => ({
       mode: isSupabaseEnabled ? 'supabase' : 'local',
       user,
+      userId,
       authorName,
       isAuthed,
       loading,
@@ -117,7 +133,7 @@ export function AuthProvider({ children }) {
       setLocalName,
       updateDisplayName,
     }),
-    [user, authorName, isAuthed, loading, localName, isMember, memberLoading]
+    [user, userId, authorName, isAuthed, loading, localName, isMember, memberLoading]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

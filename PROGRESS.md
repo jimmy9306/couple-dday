@@ -115,3 +115,16 @@
 
 ## 참고 (6차)
 - Chromium 기반 브라우저 패널은 iOS의 `env(safe-area-inset-*)`와 `input[type=date]` 네이티브 렌더링을 완전히 동일하게 재현하지 못함 — 코드 수정은 iOS Safari 공식 best practice를 따랐지만, 실제 아이폰(특히 노치/다이나믹아일랜드 기종)에서 한 번 더 육안 확인을 권장.
+
+## 7차 요청 (2026-10-01) — 댓글 기능 + 작성자 권한 DB 레벨 강화
+
+- [x] 71. `src/lib/AuthContext.jsx`에 `userId` 추가 — Supabase 모드는 `user.id`(auth.uid()), 로컬 모드는 기기 고정 임의 uuid(`dday_local_user_id`).
+- [x] 72. `src/lib/store.js` — `date_records` CRUD에 `userId` 연동(신규 작성 시에만 설정, 수정 시엔 유지), `comments` 테이블 CRUD 4종(list/listAll/add/update/delete) 추가, `subscribeToChanges`에 `comments` 테이블 추가, `deleteDateRecord`의 로컬 모드 분기에서 연관 댓글도 같이 삭제(FK cascade가 없는 로컬 모드 보정).
+- [x] 73. **마이그레이션 전후 호환성 처리** — `date_records` insert 시 `user_id` 컬럼 없음(`42703`)이면 폴백 재시도, `comments` 테이블 없음은 `listComments`/`listAllComments`에서 빈 배열로 처리. 실제 테이블 없을 때 PostgREST 에러 코드가 예상한 `42P01`이 아니라 **`PGRST205`**라는 걸 라이브 프로젝트에 직접 REST 쿼리해서 확인하고 수정함 (DECISIONS.md 15번).
+- [x] 74. `src/components/RecordViewModal.jsx` 전면 개편 — 사진 아래 댓글 목록(작성자/내용/작성시간 `MM.dd HH:mm`), 내 댓글만 수정(인라인 편집)/삭제, 맨 아래 댓글 입력창+등록 버튼 고정, 글 자체의 수정/삭제는 헤더로 이동(작성자 본인만), 댓글 테이블이 아직 없을 때 등록 시도하면 친절한 안내 메시지 표시.
+- [x] 75. `src/pages/Calendar.jsx` — 날짜별 글 목록에 댓글 개수(`💬N`) 표시(전체 댓글 1회 로드 후 집계), `isOwner` 판정을 `createdBy` 문자열 비교에서 `userId` 비교로 전환, 모달 닫을 때 `refresh()` 호출 추가(로컬 모드는 realtime이 no-op이라 안 그러면 댓글 개수가 안 갱신되는 버그 발견 후 수정).
+- [x] 76. `supabase/migration_003_comments.sql` 작성 — user_id 컬럼+백필, comments 테이블, date_records/comments/storage RLS를 본인(auth.uid())전용으로 강화, Realtime 등록. 기존 글/사진 데이터는 전혀 삭제하지 않음.
+- [x] 77. 로컬 모드로 전체 플로우 실물 테스트 — 글 작성 → 댓글 작성(본인) → `💬1` 집계 확인 → `dday_local_user_id`를 강제로 바꿔 "상대방" 시뮬레이션 → 글 수정/삭제 버튼 안 보임 + 상대 댓글 수정/삭제 안 보임 확인 → 새 댓글 추가(지민) → `💬2` 집계 확인 → 댓글 인라인 수정 확인. 실제 라이브 Supabase에도 REST로 직접 질의해서 "SQL 실행 전 에러 안 남" 가정이 맞는지 검증(위 73번).
+- [x] 78. `npm run build` 성공 확인.
+- [ ] 79. 단계별 커밋, push, 배포 확인.
+- [ ] 80. migration_003_comments.sql을 사용자에게 전달(채팅에 코드블록으로, 클립보드는 이 샌드박스에서 실제 사용자 클립보드에 안 닿는 걸 이미 확인했었음) + 실행 전/후 확인 방법 안내.

@@ -12,7 +12,13 @@ import {
   subMonths,
 } from 'date-fns'
 import { useAuth } from '../lib/AuthContext'
-import { deleteDateRecord, getRelationship, listDateRecords, subscribeToChanges } from '../lib/store'
+import {
+  deleteDateRecord,
+  getRelationship,
+  listAllComments,
+  listDateRecords,
+  subscribeToChanges,
+} from '../lib/store'
 import { getAnniversaryLabelForDate } from '../lib/date-utils'
 import DateRecordModal from '../components/DateRecordModal'
 import RecordViewModal from '../components/RecordViewModal'
@@ -23,9 +29,10 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 const MAX_DOTS = 3
 
 export default function Calendar() {
-  const { authorName } = useAuth()
+  const { authorName, userId } = useAuth()
   const [cursor, setCursor] = useState(new Date())
   const [records, setRecords] = useState([])
+  const [commentCounts, setCommentCounts] = useState(new Map())
   const [startDate, setStartDate] = useState(null)
   const [selectedDate, setSelectedDate] = useState(null)
   const [viewRecord, setViewRecord] = useState(null)
@@ -34,9 +41,18 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true)
 
   const load = async () => {
-    const [rel, recs] = await Promise.all([getRelationship(), listDateRecords()])
+    const [rel, recs, allComments] = await Promise.all([
+      getRelationship(),
+      listDateRecords(),
+      listAllComments(),
+    ])
     setStartDate(rel?.startDate || null)
     setRecords(recs)
+    const counts = new Map()
+    for (const c of allComments) {
+      counts.set(c.recordId, (counts.get(c.recordId) || 0) + 1)
+    }
+    setCommentCounts(counts)
     setLoading(false)
   }
 
@@ -214,6 +230,9 @@ export default function Calendar() {
                 >
                   <span className="font-body min-w-0 flex-1 truncate text-[11px] text-pastel-text">
                     {r.title || '(제목 없음)'}
+                    {commentCounts.get(r.id) > 0 && (
+                      <span className="text-pastel-border"> 💬{commentCounts.get(r.id)}</span>
+                    )}
                   </span>
                   <span className="font-body flex-shrink-0 text-[11px] text-pastel-accent">
                     {r.createdBy}
@@ -246,8 +265,13 @@ export default function Calendar() {
       {viewRecord && (
         <RecordViewModal
           record={viewRecord}
-          isOwner={viewRecord.createdBy === authorName}
-          onClose={() => setViewRecord(null)}
+          isOwner={viewRecord.userId != null && viewRecord.userId === userId}
+          currentUserId={userId}
+          authorName={authorName}
+          onClose={() => {
+            setViewRecord(null)
+            refresh()
+          }}
           onEdit={() => openEditFromView(viewRecord)}
           onDelete={handleDeleteFromView}
         />
@@ -259,6 +283,7 @@ export default function Calendar() {
           record={editingRecord}
           anniversaryLabel={selectedAnniversary}
           authorName={authorName}
+          userId={userId}
           onClose={handleFormClose}
           onSaved={handleFormSaved}
           onDeleted={handleFormSaved}

@@ -5,6 +5,7 @@ const LOCAL_KEYS = {
   relationship: 'dday_relationship',
   records: 'dday_records',
   todos: 'dday_todos',
+  comments: 'dday_comments',
 }
 
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7 // 7일
@@ -94,6 +95,7 @@ export async function listDateRecords() {
         photoUrl: await resolvePhotoUrl(r.photo_path),
         createdBy: r.created_by,
         createdAt: r.created_at,
+        userId: r.user_id,
       }))
     )
     return records
@@ -103,11 +105,12 @@ export async function listDateRecords() {
 }
 
 /**
- * @param {object} record { id?, date, title, memo, photoFile?, createdBy }
+ * @param {object} record { id?, date, title, memo, photoFile?, createdBy, userId? }
  * photoFile: 압축된 File 객체 (선택). 없으면 기존 사진 유지.
+ * userId: 새로 만드는 글일 때만 사용 (소유권, auth.uid()). 수정 시에는 바꾸지 않음.
  */
 export async function upsertDateRecord(record) {
-  const { id, date, title, memo, photoFile, createdBy } = record
+  const { id, date, title, memo, photoFile, createdBy, userId } = record
 
   if (isSupabaseEnabled) {
     let photoPath
@@ -128,11 +131,19 @@ export async function upsertDateRecord(record) {
       if (error) throw error
       return id
     }
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('date_records')
-      .insert(payload)
+      .insert({ ...payload, user_id: userId })
       .select('id')
       .single()
+    if (error?.code === '42703') {
+      // migration_003 실행 전(user_id 컬럼 없음) — 예전처럼 user_id 없이 저장.
+      ;({ data, error } = await supabase
+        .from('date_records')
+        .insert(payload)
+        .select('id')
+        .single())
+    }
     if (error) throw error
     return data.id
   }
@@ -167,6 +178,7 @@ export async function upsertDateRecord(record) {
     memo,
     photoUrl: photoUrl || null,
     createdBy,
+    userId,
     createdAt: new Date().toISOString(),
   })
   writeLocal(LOCAL_KEYS.records, records)
@@ -183,6 +195,117 @@ export async function deleteDateRecord(id) {
   writeLocal(
     LOCAL_KEYS.records,
     records.filter((r) => r.id !== id)
+  )
+  // 로컬 모드는 FK cascade가 없어서 댓글도 같이 지워줌 (게시글 삭제 시 댓글도 함께 삭제).
+  const comments = readLocal(LOCAL_KEYS.comments, [])
+  writeLocal(
+    LOCAL_KEYS.comments,
+    comments.filter((c) => c.recordId !== id)
+  )
+}
+
+// ---------------------------------------------------------------------------
+// comments (게시글 댓글)
+// ---------------------------------------------------------------------------
+
+// migration_003_comments.sql 실행 전에는 comments 테이블이 없어서 에러가 남
+// (PostgREST는 이를 "PGRST205"로, raw Postgres는 "42P01"로 보고함 — 환경에
+// 따라 다를 수 있어 둘 다 체크) — 그 경우엔 에러 대신 빈 배열로 취급해서
+// 나머지 화면(달력/글 목록/사진)은 평소처럼 쓸 수 있게 함.
+const TABLE_MISSING_CODES = ['PGRST205', '42P01']
+const isTableMissing = (error) => TABLE_MISSING_CODES.includes(error?.code)
+
+export async function listComments(recordId) {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('record_id', recordId)
+      .order('created_at', { ascending: true })
+    if (error) {
+      if (isTableMissing(error)) return []
+      throw error
+    }
+    return data.map((c) => ({
+      id: c.id,
+      recordId: c.record_id,
+      userId: c.user_id,
+      createdBy: c.created_by,
+      content: c.content,
+      createdAt: c.created_at,
+      updatedAt: c.updated_at,
+    }))
+  }
+  const all = readLocal(LOCAL_KEYS.comments, [])
+  return all
+    .filter((c) => c.recordId === recordId)
+    .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
+}
+
+/** 모든 기록의 댓글을 한 번에 가져옴 (달력 목록의 댓글 개수 표시용) */
+export async function listAllComments() {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase.from('comments').select('id, record_id')
+    if (error) {
+      if (isTableMissing(error)) return []
+      throw error
+    }
+    return data.map((c) => ({ id: c.id, recordId: c.record_id }))
+  }
+  const all = readLocal(LOCAL_KEYS.comments, [])
+  return all.map((c) => ({ id: c.id, recordId: c.recordId }))
+}
+
+export async function addComment({ recordId, content, createdBy, userId }) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase
+      .from('comments')
+      .insert({ record_id: recordId, content, created_by: createdBy, user_id: userId })
+    if (error) throw error
+    return
+  }
+  const all = readLocal(LOCAL_KEYS.comments, [])
+  const now = new Date().toISOString()
+  all.push({
+    id: uid(),
+    recordId,
+    userId,
+    createdBy,
+    content,
+    createdAt: now,
+    updatedAt: now,
+  })
+  writeLocal(LOCAL_KEYS.comments, all)
+}
+
+export async function updateComment(id, content) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase
+      .from('comments')
+      .update({ content, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) throw error
+    return
+  }
+  const all = readLocal(LOCAL_KEYS.comments, [])
+  const idx = all.findIndex((c) => c.id === id)
+  if (idx >= 0) {
+    all[idx].content = content
+    all[idx].updatedAt = new Date().toISOString()
+    writeLocal(LOCAL_KEYS.comments, all)
+  }
+}
+
+export async function deleteComment(id) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase.from('comments').delete().eq('id', id)
+    if (error) throw error
+    return
+  }
+  const all = readLocal(LOCAL_KEYS.comments, [])
+  writeLocal(
+    LOCAL_KEYS.comments,
+    all.filter((c) => c.id !== id)
   )
 }
 
@@ -266,6 +389,7 @@ export function subscribeToChanges(onChange) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'relationship' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'date_records' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'todos' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, onChange)
     .subscribe()
 
   return () => {

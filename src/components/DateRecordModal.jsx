@@ -3,7 +3,7 @@ import { compressPhoto } from '../lib/compress'
 import { deleteDateRecord, upsertDateRecord } from '../lib/store'
 import { HeartIcon } from './icons'
 
-export default function DateRecordModal({ dateStr, record, anniversaryLabel, authorName, onClose, onSaved, onDeleted }) {
+export default function DateRecordModal({ dateStr, record, anniversaryLabel, authorName, userId, onClose, onSaved, onDeleted }) {
   const [title, setTitle] = useState(record?.title || '')
   const [memo, setMemo] = useState(record?.memo || '')
   const [photoFile, setPhotoFile] = useState(null)
@@ -48,6 +48,7 @@ export default function DateRecordModal({ dateStr, record, anniversaryLabel, aut
         memo: memo.trim(),
         photoFile,
         createdBy: authorName,
+        userId,
       })
       onSaved()
     } catch (err) {
