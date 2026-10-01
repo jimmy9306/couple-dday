@@ -10,6 +10,7 @@ const SLOTS_PER_ROW = 8
 const MAX_SHOWN = SHELF_ROWS * SLOTS_PER_ROW
 const SPINE_COLORS = ['bg-pastel-accent', 'bg-pastel-box', 'bg-pastel-border']
 const SPINE_HEIGHTS = [26, 34, 22, 30, 24, 32, 20, 28]
+const PAGE_SIZE = 5
 
 function Bookshelf({ count, expanded, onToggle }) {
   const shown = Math.min(count, MAX_SHOWN)
@@ -67,13 +68,13 @@ function IngDots() {
 function StatusBadge({ status }) {
   if (status === 'read') {
     return (
-      <span className="pixel-stamp-pop font-title inline-block flex-shrink-0 border-2 border-pastel-border bg-pastel-accent px-1.5 py-0.5 text-[11px] text-pastel-text">
+      <span className="pixel-stamp-pop font-title inline-flex w-14 flex-shrink-0 items-center justify-center border-2 border-pastel-border bg-pastel-bg px-1.5 py-0.5 text-[11px] text-pastel-text">
         읽음!
       </span>
     )
   }
   return (
-    <span className="font-title inline-block w-10 flex-shrink-0 text-[11px] text-pastel-accent">
+    <span className="font-title inline-flex w-14 flex-shrink-0 items-center justify-center border-2 border-pastel-border bg-pastel-accent px-1.5 py-0.5 text-[11px] text-white">
       ing
       <IngDots />
     </span>
@@ -88,6 +89,7 @@ export default function BookClub() {
   const [viewBook, setViewBook] = useState(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editingBook, setEditingBook] = useState(null)
+  const [page, setPage] = useState(1)
 
   const load = async () => {
     setBooks(await listBooks())
@@ -101,13 +103,16 @@ export default function BookClub() {
   }, [])
 
   const sortedBooks = useMemo(() => {
-    const statusOrder = { reading: 0, read: 1 }
-    return [...books].sort((a, b) => {
-      const statusDiff = (statusOrder[a.status] ?? 0) - (statusOrder[b.status] ?? 0)
-      if (statusDiff !== 0) return statusDiff
-      return a.createdAt < b.createdAt ? 1 : -1
-    })
+    return [...books].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
   }, [books])
+
+  const totalPages = Math.max(1, Math.ceil(sortedBooks.length / PAGE_SIZE))
+
+  useEffect(() => {
+    setPage((p) => Math.min(p, totalPages))
+  }, [totalPages])
+
+  const pagedBooks = sortedBooks.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const readCount = books.filter((b) => b.status === 'read').length
   const readingCount = books.filter((b) => b.status === 'reading').length
@@ -124,9 +129,11 @@ export default function BookClub() {
   }
 
   const handleFormSaved = async () => {
+    const wasCreate = !editingBook
     setFormOpen(false)
     setEditingBook(null)
     await load()
+    if (wasCreate) setPage(1)
   }
 
   const handleFormClose = () => {
@@ -158,30 +165,56 @@ export default function BookClub() {
           ) : sortedBooks.length === 0 ? (
             <p className="font-body text-center text-[11px] text-pastel-text">아직 등록된 책이 없어요.</p>
           ) : (
-            <div className="border-2 border-pastel-border bg-pastel-box">
-              {sortedBooks.map((book) => (
-                <button
-                  key={book.id}
-                  type="button"
-                  onClick={() => setViewBook(book)}
-                  className="flex w-full items-center gap-3 border-b-2 border-pastel-border px-3 py-2 text-left last:border-b-0"
-                >
-                  <BookCover
-                    title={book.title}
-                    coverUrl={book.coverUrl}
-                    className="h-12 w-9"
-                    textClassName="text-[14px]"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-body truncate text-[11px] text-pastel-text">{book.title}</p>
-                    {book.author && (
-                      <p className="font-body truncate text-[11px] text-pastel-accent">{book.author}</p>
-                    )}
-                  </div>
-                  <StatusBadge status={book.status} />
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="border-2 border-pastel-border bg-pastel-box">
+                {pagedBooks.map((book) => (
+                  <button
+                    key={book.id}
+                    type="button"
+                    onClick={() => setViewBook(book)}
+                    className="flex w-full items-center gap-3 border-b-2 border-pastel-border px-3 py-2 text-left last:border-b-0"
+                  >
+                    <BookCover
+                      title={book.title}
+                      coverUrl={book.coverUrl}
+                      className="h-12 w-9"
+                      textClassName="text-[14px]"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-body truncate text-[11px] text-pastel-text">{book.title}</p>
+                      {book.author && (
+                        <p className="font-body truncate text-[11px] text-pastel-accent">{book.author}</p>
+                      )}
+                    </div>
+                    <StatusBadge status={book.status} />
+                  </button>
+                ))}
+              </div>
+
+              {sortedBooks.length > PAGE_SIZE && (
+                <div className="mt-3 flex items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="pixel-btn font-title border-2 border-pastel-border bg-pastel-accent px-3 py-1 text-[14px] text-pastel-text disabled:opacity-40"
+                  >
+                    ◀
+                  </button>
+                  <span className="font-body text-[11px] text-pastel-text">
+                    {page} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="pixel-btn font-title border-2 border-pastel-border bg-pastel-accent px-3 py-1 text-[14px] text-pastel-text disabled:opacity-40"
+                  >
+                    ▶
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
