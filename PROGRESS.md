@@ -2,7 +2,7 @@
 
 자율 진행 중 이 파일을 계속 갱신합니다. 중간에 끊기면 여기부터 이어서 진행.
 
-## 상태: 완료 ✅ (귀가 후 README.md 체크리스트만 진행하면 됨)
+## 상태: 완전히 완료 ✅ (실사용 테스트 + 실제 배포까지 끝남, 남은 건 README 7번 "마지막 할 일"뿐)
 
 - [x] 0. 프로젝트 디렉터리 + git init
 - [x] 0.5 Node.js 설치 (brew), DECISIONS.md / PROGRESS.md 초기 작성
@@ -89,8 +89,14 @@
   - 캘린더 기록+사진(지민, API+Storage 업로드) → 은지 탭에서 새로고침 없이 보이고, signed URL로 사진도 정상 로드 확인(`naturalWidth/Height` 체크)
   - 허용 목록에 없는 이메일 → "초대된 사용자만 이용 가능" 화면. (3번째 신규 가입은 Supabase 무료 티어 메일 발송 한도에 걸려서, 대신 지민 계정을 SQL로 잠깐 allowed_members에서 뺐다가 테스트 후 바로 복구하는 방식으로 안전하게 검증)
 - [x] 60. 테스트용 더미 데이터(투두/캘린더 기록+사진/만난 날짜) 전부 삭제해서 실제 사용 전 깨끗한 상태로 정리.
-- [ ] 61. GitHub Pages 배포 (brew install gh, gh auth login 승인 요청, repo 생성/push, secrets 등록, Pages 설정)
-- [ ] 62. 배포 주소 확인 및 최종 결과 요약
+- [x] 61. GitHub Pages 배포 — `brew install gh` → `gh auth login`(승인 요청, 이후 `.github/workflows` push에 필요한 `workflow` 스코프 부족으로 `gh auth refresh -s workflow` 한 번 더 승인 요청) → `gh repo create couple-dday --public` → push → `gh secret set`으로 VITE_SUPABASE_URL/ANON_KEY 등록 → Pages Source는 `gh api -X POST repos/.../pages -f build_type=workflow`로 API를 통해 직접 설정 성공 (클릭 안내 불필요했음).
+- [x] 62. 배포 주소 확인 — https://jimmy9306.github.io/couple-dday/ . 첫 push 시점엔 secrets 등록 전에 워크플로우가 먼저 돌아서 로컬모드로 잘못 배포됐던 걸 발견 → `gh run rerun`으로 재배포하고 로그인까지 실사 확인해서 Supabase 모드 정상 동작 확인.
+
+## 참고 (5차, 배포 관련)
+- gh OAuth 토큰은 기본적으로 `repo` 스코프만 있어서 `.github/workflows/*.yml`을 포함한 최초 push가 "refusing to allow an OAuth App to create or update workflow ... without `workflow` scope"로 거부됨 — `gh auth refresh -h github.com -s workflow`로 스코프 추가해서 해결 (디바이스 코드 승인 한 번 더 필요했음).
+- GitHub Pages를 Actions 소스로 켜는 것도 클릭 없이 `gh api -X POST repos/<owner>/<repo>/pages -f build_type=workflow`로 가능했음 (저장소에 Pages가 한 번도 설정된 적 없으면 POST, 이미 있으면 PUT).
+- 배포 직후 사이트가 로컬모드로 보였던 건 "secret 등록 전에 이미 큐에 들어간 워크플로우가 실행됐기 때문" — push와 secret 등록 사이에 약간의 시차가 있으면 이런 일이 생길 수 있어서, 다음에도 비슷한 상황이면 `gh run list`로 최근 run의 트리거 시각과 secret 등록 시각을 비교해보는 게 좋음.
+- 배포 직후 브라우저가 이전 `index.html`을 HTTP 캐시에서 그대로 재사용해서 새 번들이 안 보이는 현상이 있었음 (서버 쪽 `curl`로는 이미 최신 파일이 응답되는 걸 확인함, `age:0`/`x-cache:MISS`) — 쿼리스트링을 붙여 캐시를 우회해서 확인함. 사용자가 실제로 폰에서 처음 열 때는 이런 이슈가 없을 가능성이 높지만, 혹시 예전 화면이 보이면 새로고침(또는 캐시 지우기) 안내.
 
 ## 참고 (5차)
 - 자동화 브라우저 도구에서 좌표/ref 기반 클릭이 PixelPanel의 clip-path 요소 근처에서 간헐적으로 안 먹히는 현상이 이번에도 있었음 — JS `element.click()`/`form.requestSubmit()` 직접 디스패치로 전부 우회해서 테스트함. 실제 앱 사용자가 손가락/마우스로 누르는 것과는 무관한 자동화 도구 한정 이슈로 보임 (실기기에서 추가 확인 권장).

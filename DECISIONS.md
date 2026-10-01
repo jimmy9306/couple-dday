@@ -133,3 +133,24 @@
 - 투두 "CLEAR!" 연출: 완료로 체크하는 순간에만(체크 해제 시엔 X) 0.9초짜리 pop 애니메이션 배지를
   해당 행에 `pointer-events-none`으로 겹쳐 띄우고 타임아웃으로 제거. 완료 여부 자체는 기존
   `toggleTodo` 로직 그대로 사용 (기능 변경 없음).
+
+## 13. (실사용 테스트 중 발견) GRANT 누락 버그
+- SQL Editor로 `create table`을 실행하면, 대시보드 Table Editor로 만들 때와 달리 `authenticated`
+  롤에 테이블 자체의 기본 권한(GRANT)이 자동으로 붙지 않음. RLS 정책을 아무리 정확히 짜도 이
+  기본 GRANT가 없으면 `permission denied for table ...`로 전부 막힘 (RLS는 "이미 권한이 있는
+  요청 중 어떤 row를 보여줄지"를 거르는 것이지, 권한 자체를 만들어주지 않음).
+- `schema.sql`에 `grant select/insert/update/delete ...` 구문을 추가해서 해결. `allowed_members`는
+  의도적으로 `select`만 부여함 (insert/update/delete 정책 자체가 없어서 막혀 있지만, GRANT 단계에서도
+  한 번 더 막아두는 이중 방어).
+- 이 문제는 REST API로 직접 쿼리해서 "RLS 정책은 맞는데 permission denied가 난다"는 정확한 증상을
+  확인한 뒤 원인을 특정함 — 앱 로그만 봤으면 "허용 안 된 사용자"로 오인하기 쉬운 증상이라 기록해둠.
+
+## 14. (배포 중 확인) GitHub CLI 권한/캐시 이슈
+- `gh auth login` 기본 스코프(`repo` 등)로는 `.github/workflows/*.yml`이 포함된 push가 거부됨
+  ("without `workflow` scope") — `gh auth refresh -h github.com -s workflow`로 스코프를 추가해야 함.
+- GitHub Pages의 Source를 "GitHub Actions"로 바꾸는 것도 대시보드 클릭 없이
+  `gh api -X POST repos/<owner>/<repo>/pages -f build_type=workflow`로 가능함.
+- 배포 직후 "로컬모드로 보이는" 문제가 있었는데, 원인은 두 가지가 겹쳤음: (1) secrets를 등록하기
+  직전에 이미 push로 트리거된 워크플로우가 먼저 끝나버려서 빈 키로 빌드된 것, (2) 그걸 재배포(`gh run
+  rerun`)한 뒤에도 브라우저가 이전 `index.html`을 HTTP 캐시에서 그대로 써서 새 번들을 안 가져온 것
+  (서버 응답 자체는 `curl`로 확인했을 때 이미 최신이었음). 캐시 우회 쿼리스트링으로 확인 후 정상 동작 확인함.
