@@ -1,5 +1,6 @@
 import { isSupabaseEnabled, supabase } from './supabase'
 import { fileToDataUrl } from './compress'
+import { MALE_EMAIL } from './avatarParts'
 
 const LOCAL_KEYS = {
   relationship: 'dday_relationship',
@@ -8,6 +9,7 @@ const LOCAL_KEYS = {
   comments: 'dday_comments',
   books: 'dday_books',
   bookReviews: 'dday_book_reviews',
+  avatars: 'dday_avatars',
 }
 
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7 // 7일
@@ -624,6 +626,98 @@ export async function deleteBookReview(id) {
 }
 
 // ---------------------------------------------------------------------------
+// avatars (홈 화면 커플 캐릭터 꾸미기 — 본인 것만 수정 가능)
+// 로컬(개발) 모드는 실제 두 사람 이메일이 없어서, 로컬 테스터는 항상 "남성 캐릭터"
+// 슬롯(email=MALE_EMAIL)을 꾸미는 것으로 고정함 (Home.jsx가 email로 캐릭터를 매칭함).
+// ---------------------------------------------------------------------------
+
+export async function listAvatars() {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase.from('avatars').select('*')
+    if (error) {
+      if (isTableMissing(error)) return []
+      throw error
+    }
+    return data.map((a) => ({
+      userId: a.user_id,
+      email: a.email,
+      displayName: a.display_name,
+      hair: a.hair,
+      hairColor: a.hair_color,
+      top: a.top,
+      topColor: a.top_color,
+      bottom: a.bottom,
+      bottomColor: a.bottom_color,
+      shoes: a.shoes,
+      shoesColor: a.shoes_color,
+    }))
+  }
+  return readLocal(LOCAL_KEYS.avatars, [])
+}
+
+/**
+ * @param {object} avatar { userId, email?, displayName, hair, hairColor, top, topColor,
+ *   bottom, bottomColor, shoes, shoesColor }
+ * email 생략 시(로컬 모드) MALE_EMAIL로 고정 저장.
+ */
+export async function saveAvatar(avatar) {
+  const {
+    userId,
+    email = MALE_EMAIL,
+    displayName,
+    hair,
+    hairColor,
+    top,
+    topColor,
+    bottom,
+    bottomColor,
+    shoes,
+    shoesColor,
+  } = avatar
+
+  if (isSupabaseEnabled) {
+    const { error } = await supabase.from('avatars').upsert(
+      {
+        user_id: userId,
+        email,
+        display_name: displayName,
+        hair,
+        hair_color: hairColor,
+        top,
+        top_color: topColor,
+        bottom,
+        bottom_color: bottomColor,
+        shoes,
+        shoes_color: shoesColor,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id' }
+    )
+    if (error) throw error
+    return
+  }
+
+  const all = readLocal(LOCAL_KEYS.avatars, [])
+  const record = {
+    userId,
+    email,
+    displayName,
+    hair,
+    hairColor,
+    top,
+    topColor,
+    bottom,
+    bottomColor,
+    shoes,
+    shoesColor,
+  }
+  const idx = all.findIndex((a) => a.userId === userId)
+  if (idx >= 0) all[idx] = record
+  else all.push(record)
+  writeLocal(LOCAL_KEYS.avatars, all)
+}
+
+// ---------------------------------------------------------------------------
 // realtime: 상대방이 추가/수정/삭제하면 콜백을 호출해서 화면을 새로고침 없이 갱신
 // (localStorage 모드는 이 기기 하나뿐이라 구독할 게 없음 -> no-op)
 // ---------------------------------------------------------------------------
@@ -642,6 +736,7 @@ export function subscribeToChanges(onChange) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'book_reviews' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'avatars' }, onChange)
     .subscribe()
 
   return () => {

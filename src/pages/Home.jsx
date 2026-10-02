@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
-import { getRelationship, subscribeToChanges } from '../lib/store'
+import { getRelationship, listAvatars, saveAvatar, subscribeToChanges } from '../lib/store'
 import { getDayCount, getLoveGaugeProgress } from '../lib/date-utils'
+import {
+  EMAIL_FALLBACK_NAME,
+  FEMALE_EMAIL,
+  MALE_EMAIL,
+  getDefaultAvatarConfig,
+} from '../lib/avatarParts'
 import PixelPanel from '../components/PixelPanel'
+import AvatarSVG from '../components/AvatarSVG'
+import AvatarCustomizeModal from '../components/AvatarCustomizeModal'
+import AvatarViewModal from '../components/AvatarViewModal'
 import { HeartIcon, CalendarIcon, CheckIcon, BookIcon, GearIcon } from '../components/icons'
 
 const MENU_ITEMS = [
@@ -54,10 +63,21 @@ function MenuRow({ index, selected, label, Icon, onSelect }) {
 
 export default function Home() {
   const navigate = useNavigate()
-  const { authorName } = useAuth()
+  const { user, userId, authorName, mode } = useAuth()
   const [dayCount, setDayCount] = useState(null)
   const [gauge, setGauge] = useState(null)
   const [selected, setSelected] = useState(0)
+  const [avatars, setAvatars] = useState([])
+  const [customizingGender, setCustomizingGender] = useState(null)
+  const [viewingGender, setViewingGender] = useState(null)
+
+  // 로컬(개발) 모드는 실제 이메일이 없어서 항상 "남성 캐릭터" 슬롯을 내 것으로 취급함.
+  const myEmail = mode === 'supabase' ? user?.email : MALE_EMAIL
+  const myGender = myEmail === MALE_EMAIL ? 'male' : myEmail === FEMALE_EMAIL ? 'female' : null
+
+  const loadAvatars = async () => {
+    setAvatars(await listAvatars())
+  }
 
   useEffect(() => {
     const load = () => {
@@ -72,9 +92,41 @@ export default function Home() {
       })
     }
     load()
-    const unsubscribe = subscribeToChanges(load)
+    loadAvatars()
+    const unsubscribe = subscribeToChanges(() => {
+      load()
+      loadAvatars()
+    })
     return unsubscribe
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const maleRow = avatars.find((a) => a.email === MALE_EMAIL)
+  const femaleRow = avatars.find((a) => a.email === FEMALE_EMAIL)
+  const maleConfig = maleRow || getDefaultAvatarConfig('male')
+  const femaleConfig = femaleRow || getDefaultAvatarConfig('female')
+  const maleName = myGender === 'male' ? authorName : maleRow?.displayName || EMAIL_FALLBACK_NAME[MALE_EMAIL]
+  const femaleName =
+    myGender === 'female' ? authorName : femaleRow?.displayName || EMAIL_FALLBACK_NAME[FEMALE_EMAIL]
+
+  const handleAvatarTap = (gender) => {
+    if (gender === myGender) {
+      setCustomizingGender(gender)
+    } else {
+      setViewingGender(gender)
+    }
+  }
+
+  const handleSaveAvatar = async (draft) => {
+    await saveAvatar({
+      userId,
+      email: myEmail,
+      displayName: authorName,
+      ...draft,
+    })
+    setCustomizingGender(null)
+    await loadAvatars()
+  }
 
   const handleSelect = (index) => {
     setSelected(index)
@@ -131,6 +183,49 @@ export default function Home() {
           />
         ))}
       </PixelPanel>
+
+      <PixelPanel innerClassName="flex items-end justify-center gap-3 px-2 py-4">
+        <button
+          type="button"
+          onClick={() => handleAvatarTap('male')}
+          className="flex flex-col items-center gap-1"
+        >
+          <AvatarSVG gender="male" config={maleConfig} className="avatar-idle h-[120px] w-[80px]" />
+          <span className="font-body text-[11px] text-pastel-text">{maleName}</span>
+        </button>
+        <HeartIcon className="mb-7 h-4 w-4 flex-shrink-0 text-pastel-border" />
+        <button
+          type="button"
+          onClick={() => handleAvatarTap('female')}
+          className="flex flex-col items-center gap-1"
+        >
+          <AvatarSVG
+            gender="female"
+            config={femaleConfig}
+            className="avatar-idle h-[120px] w-[80px]"
+            style={{ animationDelay: '0.5s' }}
+          />
+          <span className="font-body text-[11px] text-pastel-text">{femaleName}</span>
+        </button>
+      </PixelPanel>
+
+      {customizingGender && (
+        <AvatarCustomizeModal
+          gender={customizingGender}
+          config={customizingGender === 'male' ? maleConfig : femaleConfig}
+          onClose={() => setCustomizingGender(null)}
+          onSave={handleSaveAvatar}
+        />
+      )}
+
+      {viewingGender && (
+        <AvatarViewModal
+          gender={viewingGender}
+          name={viewingGender === 'male' ? maleName : femaleName}
+          config={viewingGender === 'male' ? maleConfig : femaleConfig}
+          onClose={() => setViewingGender(null)}
+        />
+      )}
     </div>
   )
 }
