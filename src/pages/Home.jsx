@@ -170,11 +170,11 @@ export default function Home() {
             </p>
 
             {gauge && (
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-                <LoveGauge progress={gauge.progress} />
+              <div className="mt-4 flex flex-col items-center gap-2">
                 <p className="font-body text-[11px] text-pastel-text">
                   {gauge.nextLabel}까지 D-{gauge.nextDday}
                 </p>
+                <LoveGauge progress={gauge.progress} />
               </div>
             )}
           </>
