@@ -11,6 +11,7 @@ import BookCover from '../components/BookCover'
 import BookFormModal from '../components/BookFormModal'
 import BookViewModal from '../components/BookViewModal'
 import ConfirmDialog from '../components/ConfirmDialog'
+import { BookIcon } from '../components/icons'
 
 const SHELF_ROWS = 2
 const SLOTS_PER_ROW = 8
@@ -184,7 +185,10 @@ export default function BookClub() {
 
   return (
     <div className="pt-6">
-      <h2 className="font-title mb-4 text-[14px] text-pastel-text">북클럽</h2>
+      <div className="mb-4 flex items-center justify-center gap-2">
+        <BookIcon className="h-4 w-4 text-pastel-border" />
+        <h2 className="font-title text-[14px] text-pastel-text">북클럽</h2>
+      </div>
 
       <div className="mb-3 flex justify-center gap-4">
         <span className="font-body text-[11px] text-pastel-text">읽은 책 {readCount}권</span>

@@ -3,7 +3,7 @@ import { useAuth } from '../lib/AuthContext'
 import { addTodo, deleteTodo, listTodos, subscribeToChanges, toggleTodo } from '../lib/store'
 import PixelPanel from '../components/PixelPanel'
 import ConfirmDialog from '../components/ConfirmDialog'
-import { CheckIcon } from '../components/icons'
+import { CheckIcon, HeartIcon } from '../components/icons'
 
 export default function Todo() {
   const { authorName } = useAuth()
@@ -61,7 +61,11 @@ export default function Todo() {
 
   return (
     <div className="pt-6">
-      <h2 className="font-title mb-4 text-[14px] text-pastel-text">같이 할 일</h2>
+      <div className="mb-4 flex items-center justify-center gap-2">
+        <HeartIcon className="h-4 w-4 text-pastel-border" />
+        <h2 className="font-title text-[14px] text-pastel-text">투두 리스트</h2>
+        <HeartIcon className="h-4 w-4 text-pastel-border" />
+      </div>
 
       <form onSubmit={handleAdd} className="mb-4 flex gap-2">
         <input

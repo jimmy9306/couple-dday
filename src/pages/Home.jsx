@@ -156,7 +156,7 @@ export default function Home() {
         )}
       </div>
 
-      <PixelPanel innerClassName="p-4">
+      <PixelPanel innerClassName="p-4 text-center">
         {dayCount === null ? (
           <p className="font-body text-[11px] text-pastel-text">
             설정에서 만난 날을 먼저 입력해주세요.
@@ -170,7 +170,7 @@ export default function Home() {
             </p>
 
             {gauge && (
-              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
                 <LoveGauge progress={gauge.progress} />
                 <p className="font-body text-[11px] text-pastel-text">
                   {gauge.nextLabel}까지 D-{gauge.nextDday}
@@ -179,6 +179,12 @@ export default function Home() {
             )}
           </>
         )}
+
+        <div className="mt-5 flex items-end justify-center gap-2">
+          <CoupleCharacter name={maleName} sprite="jimin" />
+          <HeartIcon className="mb-6 h-4 w-4 flex-shrink-0 text-pastel-border" />
+          <CoupleCharacter name={femaleName} sprite="eunji" animationDelay="0.5s" />
+        </div>
       </PixelPanel>
 
       <PixelPanel innerClassName="">
@@ -192,12 +198,6 @@ export default function Home() {
             onSelect={handleSelect}
           />
         ))}
-      </PixelPanel>
-
-      <PixelPanel innerClassName="flex items-end justify-center gap-2 px-2 py-3">
-        <CoupleCharacter name={maleName} sprite="jimin" />
-        <HeartIcon className="mb-8 h-4 w-4 flex-shrink-0 text-pastel-border" />
-        <CoupleCharacter name={femaleName} sprite="eunji" animationDelay="0.5s" />
       </PixelPanel>
     </div>
   )
