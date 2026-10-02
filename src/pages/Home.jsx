@@ -3,19 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { getRelationship, subscribeToChanges } from '../lib/store'
 import { getDayCount, getLoveGaugeProgress } from '../lib/date-utils'
-import {
-  EMAIL_FALLBACK_NAME,
-  FEMALE_EMAIL,
-  FEMALE_BLINK_ROWS,
-  FEMALE_PALETTE,
-  FEMALE_ROWS,
-  MALE_EMAIL,
-  MALE_BLINK_ROWS,
-  MALE_PALETTE,
-  MALE_ROWS,
-} from '../lib/avatarParts'
+import { EMAIL_FALLBACK_NAME, FEMALE_EMAIL, MALE_EMAIL } from '../lib/couple'
 import PixelPanel from '../components/PixelPanel'
-import AvatarSVG from '../components/AvatarSVG'
+import CoupleSprite from '../components/CoupleSprite'
 import { HeartIcon, CalendarIcon, CheckIcon, BookIcon, GearIcon } from '../components/icons'
 
 const MENU_ITEMS = [
@@ -64,7 +54,7 @@ function MenuRow({ index, selected, label, Icon, onSelect }) {
   )
 }
 
-// 랜덤한 간격(2.5~5.5초)으로 150ms짜리 눈 깜빡임을 트리거.
+// 랜덤한 간격(3~5초)으로 150ms짜리 눈 깜빡임을 트리거.
 function useBlink() {
   const [blinking, setBlinking] = useState(false)
 
@@ -72,7 +62,7 @@ function useBlink() {
     let hideTimer
     let showTimer
     const schedule = () => {
-      const delay = 2500 + Math.random() * 3000
+      const delay = 3000 + Math.random() * 2000
       showTimer = window.setTimeout(() => {
         setBlinking(true)
         hideTimer = window.setTimeout(() => {
@@ -91,17 +81,16 @@ function useBlink() {
   return blinking
 }
 
-function CoupleCharacter({ name, rows, blinkRows, palette, rotate, animationDelay, onTap }) {
+function CoupleCharacter({ name, sprite, animationDelay }) {
   const blinking = useBlink()
   const [heartPopKey, setHeartPopKey] = useState(0)
 
-  const handleTap = () => {
-    setHeartPopKey((k) => k + 1)
-    onTap?.()
-  }
-
   return (
-    <button type="button" onClick={handleTap} className="relative flex flex-col items-center gap-1">
+    <button
+      type="button"
+      onClick={() => setHeartPopKey((k) => k + 1)}
+      className="relative flex flex-col items-center gap-1"
+    >
       {heartPopKey > 0 && (
         <span
           key={heartPopKey}
@@ -110,13 +99,8 @@ function CoupleCharacter({ name, rows, blinkRows, palette, rotate, animationDela
           <HeartIcon className="h-4 w-4 text-pastel-border" />
         </span>
       )}
-      <div style={{ transform: `rotate(${rotate}deg)` }}>
-        <AvatarSVG
-          rows={blinking ? blinkRows : rows}
-          palette={palette}
-          className="avatar-idle h-[128px] w-[96px]"
-          style={{ animationDelay }}
-        />
+      <div className="avatar-idle" style={{ animationDelay }}>
+        <CoupleSprite name={sprite} blinking={blinking} />
       </div>
       <span className="font-body text-[11px] text-pastel-text">{name}</span>
     </button>
@@ -211,22 +195,9 @@ export default function Home() {
       </PixelPanel>
 
       <PixelPanel innerClassName="flex items-end justify-center gap-2 px-2 py-3">
-        <CoupleCharacter
-          name={maleName}
-          rows={MALE_ROWS}
-          blinkRows={MALE_BLINK_ROWS}
-          palette={MALE_PALETTE}
-          rotate={-4}
-        />
+        <CoupleCharacter name={maleName} sprite="jimin" />
         <HeartIcon className="mb-8 h-4 w-4 flex-shrink-0 text-pastel-border" />
-        <CoupleCharacter
-          name={femaleName}
-          rows={FEMALE_ROWS}
-          blinkRows={FEMALE_BLINK_ROWS}
-          palette={FEMALE_PALETTE}
-          rotate={4}
-          animationDelay="0.5s"
-        />
+        <CoupleCharacter name={femaleName} sprite="eunji" animationDelay="0.5s" />
       </PixelPanel>
     </div>
   )
