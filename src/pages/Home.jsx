@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
-import { getRelationship, listAvatars, saveAvatar, subscribeToChanges } from '../lib/store'
+import { getRelationship, subscribeToChanges } from '../lib/store'
 import { getDayCount, getLoveGaugeProgress } from '../lib/date-utils'
 import {
   EMAIL_FALLBACK_NAME,
   FEMALE_EMAIL,
+  FEMALE_BLINK_ROWS,
+  FEMALE_PALETTE,
+  FEMALE_ROWS,
   MALE_EMAIL,
-  getDefaultAvatarConfig,
+  MALE_BLINK_ROWS,
+  MALE_PALETTE,
+  MALE_ROWS,
 } from '../lib/avatarParts'
 import PixelPanel from '../components/PixelPanel'
 import AvatarSVG from '../components/AvatarSVG'
-import AvatarCustomizeModal from '../components/AvatarCustomizeModal'
-import AvatarViewModal from '../components/AvatarViewModal'
 import { HeartIcon, CalendarIcon, CheckIcon, BookIcon, GearIcon } from '../components/icons'
 
 const MENU_ITEMS = [
@@ -61,23 +64,75 @@ function MenuRow({ index, selected, label, Icon, onSelect }) {
   )
 }
 
+// 랜덤한 간격(2.5~5.5초)으로 150ms짜리 눈 깜빡임을 트리거.
+function useBlink() {
+  const [blinking, setBlinking] = useState(false)
+
+  useEffect(() => {
+    let hideTimer
+    let showTimer
+    const schedule = () => {
+      const delay = 2500 + Math.random() * 3000
+      showTimer = window.setTimeout(() => {
+        setBlinking(true)
+        hideTimer = window.setTimeout(() => {
+          setBlinking(false)
+          schedule()
+        }, 150)
+      }, delay)
+    }
+    schedule()
+    return () => {
+      window.clearTimeout(showTimer)
+      window.clearTimeout(hideTimer)
+    }
+  }, [])
+
+  return blinking
+}
+
+function CoupleCharacter({ name, rows, blinkRows, palette, rotate, animationDelay, onTap }) {
+  const blinking = useBlink()
+  const [heartPopKey, setHeartPopKey] = useState(0)
+
+  const handleTap = () => {
+    setHeartPopKey((k) => k + 1)
+    onTap?.()
+  }
+
+  return (
+    <button type="button" onClick={handleTap} className="relative flex flex-col items-center gap-1">
+      {heartPopKey > 0 && (
+        <span
+          key={heartPopKey}
+          className="heart-pop pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2"
+        >
+          <HeartIcon className="h-4 w-4 text-pastel-border" />
+        </span>
+      )}
+      <div style={{ transform: `rotate(${rotate}deg)` }}>
+        <AvatarSVG
+          rows={blinking ? blinkRows : rows}
+          palette={palette}
+          className="avatar-idle h-[128px] w-[96px]"
+          style={{ animationDelay }}
+        />
+      </div>
+      <span className="font-body text-[11px] text-pastel-text">{name}</span>
+    </button>
+  )
+}
+
 export default function Home() {
   const navigate = useNavigate()
-  const { user, userId, authorName, mode } = useAuth()
+  const { user, authorName, mode } = useAuth()
   const [dayCount, setDayCount] = useState(null)
   const [gauge, setGauge] = useState(null)
   const [selected, setSelected] = useState(0)
-  const [avatars, setAvatars] = useState([])
-  const [customizingGender, setCustomizingGender] = useState(null)
-  const [viewingGender, setViewingGender] = useState(null)
 
   // 로컬(개발) 모드는 실제 이메일이 없어서 항상 "남성 캐릭터" 슬롯을 내 것으로 취급함.
   const myEmail = mode === 'supabase' ? user?.email : MALE_EMAIL
   const myGender = myEmail === MALE_EMAIL ? 'male' : myEmail === FEMALE_EMAIL ? 'female' : null
-
-  const loadAvatars = async () => {
-    setAvatars(await listAvatars())
-  }
 
   useEffect(() => {
     const load = () => {
@@ -92,41 +147,12 @@ export default function Home() {
       })
     }
     load()
-    loadAvatars()
-    const unsubscribe = subscribeToChanges(() => {
-      load()
-      loadAvatars()
-    })
+    const unsubscribe = subscribeToChanges(load)
     return unsubscribe
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const maleRow = avatars.find((a) => a.email === MALE_EMAIL)
-  const femaleRow = avatars.find((a) => a.email === FEMALE_EMAIL)
-  const maleConfig = maleRow || getDefaultAvatarConfig('male')
-  const femaleConfig = femaleRow || getDefaultAvatarConfig('female')
-  const maleName = myGender === 'male' ? authorName : maleRow?.displayName || EMAIL_FALLBACK_NAME[MALE_EMAIL]
-  const femaleName =
-    myGender === 'female' ? authorName : femaleRow?.displayName || EMAIL_FALLBACK_NAME[FEMALE_EMAIL]
-
-  const handleAvatarTap = (gender) => {
-    if (gender === myGender) {
-      setCustomizingGender(gender)
-    } else {
-      setViewingGender(gender)
-    }
-  }
-
-  const handleSaveAvatar = async (draft) => {
-    await saveAvatar({
-      userId,
-      email: myEmail,
-      displayName: authorName,
-      ...draft,
-    })
-    setCustomizingGender(null)
-    await loadAvatars()
-  }
+  const maleName = myGender === 'male' ? authorName : EMAIL_FALLBACK_NAME[MALE_EMAIL]
+  const femaleName = myGender === 'female' ? authorName : EMAIL_FALLBACK_NAME[FEMALE_EMAIL]
 
   const handleSelect = (index) => {
     setSelected(index)
@@ -184,48 +210,24 @@ export default function Home() {
         ))}
       </PixelPanel>
 
-      <PixelPanel innerClassName="flex items-end justify-center gap-3 px-2 py-4">
-        <button
-          type="button"
-          onClick={() => handleAvatarTap('male')}
-          className="flex flex-col items-center gap-1"
-        >
-          <AvatarSVG gender="male" config={maleConfig} className="avatar-idle h-[120px] w-[80px]" />
-          <span className="font-body text-[11px] text-pastel-text">{maleName}</span>
-        </button>
-        <HeartIcon className="mb-7 h-4 w-4 flex-shrink-0 text-pastel-border" />
-        <button
-          type="button"
-          onClick={() => handleAvatarTap('female')}
-          className="flex flex-col items-center gap-1"
-        >
-          <AvatarSVG
-            gender="female"
-            config={femaleConfig}
-            className="avatar-idle h-[120px] w-[80px]"
-            style={{ animationDelay: '0.5s' }}
-          />
-          <span className="font-body text-[11px] text-pastel-text">{femaleName}</span>
-        </button>
+      <PixelPanel innerClassName="flex items-end justify-center gap-2 px-2 py-3">
+        <CoupleCharacter
+          name={maleName}
+          rows={MALE_ROWS}
+          blinkRows={MALE_BLINK_ROWS}
+          palette={MALE_PALETTE}
+          rotate={-4}
+        />
+        <HeartIcon className="mb-8 h-4 w-4 flex-shrink-0 text-pastel-border" />
+        <CoupleCharacter
+          name={femaleName}
+          rows={FEMALE_ROWS}
+          blinkRows={FEMALE_BLINK_ROWS}
+          palette={FEMALE_PALETTE}
+          rotate={4}
+          animationDelay="0.5s"
+        />
       </PixelPanel>
-
-      {customizingGender && (
-        <AvatarCustomizeModal
-          gender={customizingGender}
-          config={customizingGender === 'male' ? maleConfig : femaleConfig}
-          onClose={() => setCustomizingGender(null)}
-          onSave={handleSaveAvatar}
-        />
-      )}
-
-      {viewingGender && (
-        <AvatarViewModal
-          gender={viewingGender}
-          name={viewingGender === 'male' ? maleName : femaleName}
-          config={viewingGender === 'male' ? maleConfig : femaleConfig}
-          onClose={() => setViewingGender(null)}
-        />
-      )}
     </div>
   )
 }

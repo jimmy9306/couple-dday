@@ -134,3 +134,26 @@ input[type='date'] {
 .avatar-idle {
   animation: avatar-idle 1s steps(1, end) infinite;
 }
+
+@keyframes heart-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-16px) scale(1.3);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.8);
+  }
+}
+
+.heart-pop {
+  animation: heart-pop 0.7s ease-out forwards;
+}
