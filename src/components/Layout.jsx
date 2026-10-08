@@ -1,17 +1,20 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
+import { NotificationsProvider, useNotifications } from '../lib/NotificationsContext'
+import UnreadDot from './UnreadDot'
 import { HomeIcon, HeartIcon, CalendarIcon, CheckIcon, GearIcon } from './icons'
 
 const tabs = [
   { to: '/', label: '홈', Icon: HomeIcon, end: true },
-  { to: '/dday', label: '디데이', Icon: HeartIcon, end: false },
-  { to: '/calendar', label: '달력', Icon: CalendarIcon, end: false },
-  { to: '/todo', label: '투두', Icon: CheckIcon, end: false },
+  { to: '/dday', label: '디데이', Icon: HeartIcon, end: false, tab: 'dday' },
+  { to: '/calendar', label: '달력', Icon: CalendarIcon, end: false, tab: 'calendar' },
+  { to: '/todo', label: '투두', Icon: CheckIcon, end: false, tab: 'todo' },
   { to: '/settings', label: '설정', Icon: GearIcon, end: false },
 ]
 
-export default function Layout() {
+function LayoutShell() {
   const { mode } = useAuth()
+  const { counts } = useNotifications()
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-pastel-bg pt-[calc(env(safe-area-inset-top)+40px)]">
@@ -27,7 +30,7 @@ export default function Layout() {
 
       <nav className="fixed bottom-0 left-1/2 w-full max-w-md -translate-x-1/2 border-t-2 border-pastel-border bg-pastel-box pb-[env(safe-area-inset-bottom)]">
         <div className="flex justify-around">
-          {tabs.map(({ to, label, Icon, end }) => (
+          {tabs.map(({ to, label, Icon, end, tab }) => (
             <NavLink
               key={to}
               to={to}
@@ -38,12 +41,23 @@ export default function Layout() {
                 }`
               }
             >
-              <Icon className="h-4 w-4" />
+              <span className="relative">
+                <Icon className="h-4 w-4" />
+                <UnreadDot show={Boolean(tab && counts[tab])} className="-right-2 -top-1" />
+              </span>
               {label}
             </NavLink>
           ))}
         </div>
       </nav>
     </div>
+  )
+}
+
+export default function Layout() {
+  return (
+    <NotificationsProvider>
+      <LayoutShell />
+    </NotificationsProvider>
   )
 }

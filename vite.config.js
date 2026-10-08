@@ -11,6 +11,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // 푸시 알림(push 이벤트) 처리가 필요해서 서비스워커를 직접 작성(src/sw.js)하고,
+      // 플러그인은 프리캐시 목록만 주입함(injectManifest).
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
       // 기본 주입 스크립트는 그냥 register()만 하고 끝나서, 이미 열려있는 PWA 세션은
       // 백그라운드에서 새 서비스워커가 설치/활성화돼도 새로고침 전까진 옛 JS를 계속
@@ -46,11 +51,9 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
-        // 새 서비스워커가 기존(대기 중) 워커를 기다리지 않고 바로 활성화 + 열려있는
-        // 모든 탭의 컨트롤을 즉시 넘겨받도록 명시(= registerSW의 자동 새로고침과 짝).
-        skipWaiting: true,
-        clientsClaim: true,
+      injectManifest: {
+        // 서비스워커는 classic 스크립트로 등록되므로 import/export 없는 단일 파일(iife)로 고정
+        rollupFormat: 'iife',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         // galmuri 패키지가 여러 굵기/폭(7,9,11,11-Bold,11-Condensed,14,Mono...)의 폰트를
         // 한 CSS에 다 선언해두지만 실제로 쓰는 건 Galmuri11/Galmuri14 뿐이라,

@@ -87,3 +87,13 @@ npm run build     # 프로덕션 빌드 (dist/ 생성)
 npm run preview   # 빌드 결과 미리보기
 npm run gen-icons # PWA 아이콘 재생성 (scripts/gen-icons.mjs)
 ```
+
+---
+
+## 푸시 알림 (아이폰 홈 화면 앱)
+
+1. Supabase SQL Editor에서 `supabase/migration_007_notifications.sql` 실행 (여러 번 실행해도 안전)
+2. 각자 아이폰 사파리로 사이트를 열고 **공유 → 홈 화면에 추가** → 홈 화면의 앱으로 열어 로그인
+3. **설정 탭 → 알림 켜기** → 알림 허용 (iOS 16.4 이상, 홈 화면 앱에서만 가능)
+
+Edge Function(`supabase/functions/send-push`)과 VAPID 키는 이미 배포/등록돼 있어요. 비공개 키는 Supabase secrets에만 있고, 다시 배포하려면 `supabase functions deploy send-push --no-verify-jwt --use-api --project-ref <프로젝트 ref>`.

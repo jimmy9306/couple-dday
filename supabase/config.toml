@@ -1,0 +1,8 @@
+# Supabase CLI 설정 — Edge Function 배포용 최소 설정.
+project_id = "nlwajjurwlhvlvyaumsc"
+
+# send-push 는 DB 트리거(pg_net)가 호출하는데, 새 방식 API 키(sb_publishable_...)는 JWT가 아니라서
+# JWT 검증을 켜 둘 수 없음. 대신 함수가 "알림 id만 받아 DB에서 내용을 읽고, pushed_at 으로 한 번만 발송"하므로
+# 호출을 위조해도 새 알림을 만들 수 없음 (supabase/functions/send-push/index.ts 참고).
+[functions.send-push]
+verify_jwt = false

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
 import { getRelationship, setStartDate } from '../lib/store'
 import PixelPanel from '../components/PixelPanel'
+import NotificationSettings from '../components/NotificationSettings'
 
 export default function Settings() {
   const { authorName, updateDisplayName, mode, signOut } = useAuth()
@@ -121,6 +122,8 @@ export default function Settings() {
           투두와 데이트 기록에 작성자로 표시돼요. {mode === 'local' && '(이 기기에만 저장)'}
         </p>
       </PixelPanel>
+
+      {mode === 'supabase' && <NotificationSettings />}
 
       <button
         type="button"

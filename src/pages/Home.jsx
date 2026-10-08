@@ -7,6 +7,8 @@ import { EMAIL_FALLBACK_NAME, FEMALE_EMAIL, MALE_EMAIL } from '../lib/couple'
 import PixelPanel from '../components/PixelPanel'
 import CoupleSprite from '../components/CoupleSprite'
 import AutumnEffect from '../components/AutumnEffect'
+import UnreadDot from '../components/UnreadDot'
+import { useNotifications } from '../lib/NotificationsContext'
 import useAutumnWind from '../lib/useAutumnWind'
 import { HeartIcon, CalendarIcon, CheckIcon, BookIcon, GearIcon } from '../components/icons'
 
@@ -14,7 +16,7 @@ const MENU_ITEMS = [
   { label: '디데이', to: '/dday', Icon: HeartIcon },
   { label: '달력', to: '/calendar', Icon: CalendarIcon },
   { label: '투두', to: '/todo', Icon: CheckIcon },
-  { label: '북클럽', to: '/bookclub', Icon: BookIcon },
+  { label: '북클럽', to: '/bookclub', Icon: BookIcon, tab: 'bookclub' },
   { label: '설정', to: '/settings', Icon: GearIcon },
 ]
 
@@ -36,7 +38,7 @@ function LoveGauge({ progress }) {
   )
 }
 
-function MenuRow({ index, selected, label, Icon, onSelect }) {
+function MenuRow({ index, selected, label, Icon, dot, onSelect }) {
   return (
     <button
       type="button"
@@ -52,6 +54,7 @@ function MenuRow({ index, selected, label, Icon, onSelect }) {
       </span>
       <Icon className="h-4 w-4 text-pastel-border" />
       <span className="font-title text-[14px] text-pastel-text">{label}</span>
+      <UnreadDot show={dot} inline />
     </button>
   )
 }
@@ -116,6 +119,7 @@ export default function Home() {
   const [gauge, setGauge] = useState(null)
   const [selected, setSelected] = useState(0)
   const { enabled: autumn, gust } = useAutumnWind()
+  const { counts } = useNotifications()
 
   // 로컬(개발) 모드는 실제 이메일이 없어서 항상 "남성 캐릭터" 슬롯을 내 것으로 취급함.
   const myEmail = mode === 'supabase' ? user?.email : MALE_EMAIL
@@ -201,6 +205,7 @@ export default function Home() {
             selected={selected === i}
             label={item.label}
             Icon={item.Icon}
+            dot={Boolean(item.tab && counts[item.tab])}
             onSelect={handleSelect}
           />
         ))}

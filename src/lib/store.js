@@ -8,6 +8,8 @@ const LOCAL_KEYS = {
   comments: 'dday_comments',
   books: 'dday_books',
   bookReviews: 'dday_book_reviews',
+  notifications: 'dday_notifications',
+  notificationPrefs: 'dday_notification_prefs',
 }
 
 const SIGNED_URL_TTL = 60 * 60 * 24 * 7 // 7일
@@ -624,6 +626,92 @@ export async function deleteBookReview(id) {
 }
 
 // ---------------------------------------------------------------------------
+// notifications (안 읽은 알림 = 탭 빨간 점 + 앱 아이콘 배지, 푸시 구독/종류별 on-off)
+// 알림 행 자체는 DB 트리거가 만들고(migration_007), 앱은 읽기/읽음 처리만 함.
+// 로컬(개발) 모드는 혼자라 알림이 생기지 않지만, 화면 확인용으로 localStorage의
+// dday_notifications([{id, tab, read}])를 읽도록 해둠.
+// ---------------------------------------------------------------------------
+
+export async function listUnreadNotifications() {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('id, tab')
+      .eq('read', false)
+    if (error) {
+      if (isTableMissing(error)) return []
+      throw error
+    }
+    return data
+  }
+  return readLocal(LOCAL_KEYS.notifications, [])
+    .filter((n) => !n.read)
+    .map((n) => ({ id: n.id, tab: n.tab }))
+}
+
+/** 해당 탭(dday/calendar/todo/bookclub)의 안 읽은 알림을 전부 읽음 처리 */
+export async function markNotificationsRead(tab) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('tab', tab)
+      .eq('read', false)
+    if (error && !isTableMissing(error)) throw error
+    return
+  }
+  const all = readLocal(LOCAL_KEYS.notifications, [])
+  writeLocal(
+    LOCAL_KEYS.notifications,
+    all.map((n) => (n.tab === tab ? { ...n, read: true } : n))
+  )
+}
+
+/** 꺼둔 알림 종류 목록 (비어 있으면 전부 켜짐) */
+export async function getDisabledNotificationKinds() {
+  if (isSupabaseEnabled) {
+    const { data, error } = await supabase
+      .from('notification_prefs')
+      .select('disabled_kinds')
+      .maybeSingle()
+    if (error) {
+      if (isTableMissing(error)) return []
+      throw error
+    }
+    return data?.disabled_kinds || []
+  }
+  return readLocal(LOCAL_KEYS.notificationPrefs, [])
+}
+
+export async function saveDisabledNotificationKinds(userId, disabledKinds) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase.from('notification_prefs').upsert(
+      { user_id: userId, disabled_kinds: disabledKinds, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    )
+    if (error) throw error
+    return
+  }
+  writeLocal(LOCAL_KEYS.notificationPrefs, disabledKinds)
+}
+
+/** 이 기기의 푸시 구독을 내 계정에 등록 (같은 기기에서 계정을 바꿔도 새 계정으로 넘어감) */
+export async function registerPushSubscription({ endpoint, p256dh, authKey, userAgent }) {
+  const { error } = await supabase.rpc('register_push_subscription', {
+    p_endpoint: endpoint,
+    p_p256dh: p256dh,
+    p_auth_key: authKey,
+    p_user_agent: userAgent || null,
+  })
+  if (error) throw error
+}
+
+export async function deletePushSubscription(endpoint) {
+  const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint)
+  if (error) throw error
+}
+
+// ---------------------------------------------------------------------------
 // realtime: 상대방이 추가/수정/삭제하면 콜백을 호출해서 화면을 새로고침 없이 갱신
 // (localStorage 모드는 이 기기 하나뿐이라 구독할 게 없음 -> no-op)
 // ---------------------------------------------------------------------------
@@ -642,6 +730,21 @@ export function subscribeToChanges(onChange) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'books' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'book_reviews' }, onChange)
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}
+
+// 알림(notifications) 전용 실시간 구독. 다른 테이블과 한 채널에 묶으면, 테이블이 아직 없거나
+// realtime에 등록되기 전(SQL 실행 전)에 채널 전체가 거부돼서 투두/달력 실시간까지 멈출 수 있어서 따로 분리함.
+export function subscribeToNotifications(onChange) {
+  if (!isSupabaseEnabled) return () => {}
+
+  const channel = supabase
+    .channel(`dday-notifications-${uid()}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, onChange)
     .subscribe()
 
   return () => {
