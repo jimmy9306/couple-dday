@@ -11,6 +11,7 @@ import BookCover from '../components/BookCover'
 import BookFormModal from '../components/BookFormModal'
 import BookViewModal from '../components/BookViewModal'
 import ConfirmDialog from '../components/ConfirmDialog'
+import useFocusTarget from '../lib/useFocusTarget'
 import { BookIcon } from '../components/icons'
 
 const SHELF_ROWS = 2
@@ -108,6 +109,7 @@ export default function BookClub() {
   const [page, setPage] = useState(1)
   const [confirmingReadBook, setConfirmingReadBook] = useState(null)
   const [reviewCounts, setReviewCounts] = useState(new Map())
+  const { focus, consume } = useFocusTarget(['book_read', 'book_review'])
 
   const load = async () => {
     const [bookList, allReviews] = await Promise.all([listBooks(), listAllBookReviews()])
@@ -126,6 +128,14 @@ export default function BookClub() {
     const unsubscribe = subscribeToChanges(() => load())
     return unsubscribe
   }, [])
+
+  // 알림을 눌러 들어온 경우: 해당 책 정보 팝업을 연다
+  useEffect(() => {
+    if (!focus || loading) return
+    const book = focus.targetId ? books.find((x) => x.id === focus.targetId) : null
+    if (book) setViewBook(book)
+    consume()
+  }, [focus, loading, books, consume])
 
   const sortedBooks = useMemo(() => {
     return [...books].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))

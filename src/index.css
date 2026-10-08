@@ -257,3 +257,45 @@ input[type='date'] {
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------------
+   알림 센터: 패널 슬라이드 인 + 이동한 항목 2초 깜빡임 강조
+   --------------------------------------------------------------------- */
+.notif-slide-in {
+  animation: notif-slide 0.22s steps(5, end) 1 both;
+}
+
+@keyframes notif-slide {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* 0.5초 간격으로 4번(=2초) 켜졌다 꺼짐. 배경은 반투명 핑크 오버레이로만 칠해서 원래 배경을 안 가림 */
+.notif-blink {
+  animation: notif-blink 0.5s steps(1, end) 4;
+}
+
+@keyframes notif-blink {
+  0% {
+    box-shadow: inset 0 0 0 3px #d6457a;
+    background-image: linear-gradient(rgba(214, 69, 122, 0.28), rgba(214, 69, 122, 0.28));
+  }
+  50% {
+    box-shadow: inset 0 0 0 3px transparent;
+    background-image: linear-gradient(rgba(214, 69, 122, 0), rgba(214, 69, 122, 0));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notif-slide-in {
+    animation: none;
+  }
+  .notif-blink {
+    animation: none;
+    box-shadow: inset 0 0 0 3px #d6457a;
+  }
+}

@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { NotificationsProvider, useNotifications } from '../lib/NotificationsContext'
 import UnreadDot from './UnreadDot'
+import NotificationCenter from './NotificationCenter'
 import { HomeIcon, HeartIcon, CalendarIcon, CheckIcon, GearIcon } from './icons'
 
 const tabs = [
@@ -23,6 +24,8 @@ function LayoutShell() {
           테스트 모드 — 이 기기에만 저장돼요 (연인과 공유 안 됨)
         </div>
       )}
+
+      <NotificationCenter />
 
       <main className="flex-1 overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)]">
         <Outlet />

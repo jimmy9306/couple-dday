@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import {
   addComment,
@@ -22,7 +22,7 @@ function formatCommentTime(iso) {
   }
 }
 
-function CommentRow({ comment, isMine, onEdit, onDelete }) {
+function CommentRow({ comment, isMine, highlight, onEdit, onDelete }) {
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState(comment.content)
   const [busy, setBusy] = useState(false)
@@ -73,7 +73,10 @@ function CommentRow({ comment, isMine, onEdit, onDelete }) {
   }
 
   return (
-    <li className="border-2 border-pastel-border bg-pastel-bg px-2 py-1.5">
+    <li
+      data-comment-id={comment.id}
+      className={`border-2 border-pastel-border bg-pastel-bg px-2 py-1.5 ${highlight ? 'notif-blink' : ''}`}
+    >
       <div className="flex items-baseline justify-between gap-2">
         <span className="font-title text-[11px] text-pastel-text">{comment.createdBy}</span>
         <span className="font-body flex-shrink-0 text-[11px] text-pastel-accent">
@@ -123,6 +126,7 @@ export default function RecordViewModal({
   isOwner,
   currentUserId,
   authorName,
+  focusCommentId,
   onClose,
   onEdit,
   onDelete,
@@ -133,6 +137,11 @@ export default function RecordViewModal({
   const [posting, setPosting] = useState(false)
   const [commentError, setCommentError] = useState('')
   const [confirmingDeletePost, setConfirmingDeletePost] = useState(false)
+  // 알림에서 넘어온 댓글: 그 댓글로 스크롤하고 2초간 깜빡이며 강조
+  const [highlightId, setHighlightId] = useState(null)
+  const commentsRef = useRef(null)
+  const focusedRef = useRef(null)
+  const highlightTimer = useRef(null)
 
   const loadComments = async () => {
     const list = await listComments(record.id)
@@ -146,6 +155,18 @@ export default function RecordViewModal({
     return unsubscribe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [record.id])
+
+  useEffect(() => {
+    if (!focusCommentId || loadingComments || focusedRef.current === focusCommentId) return
+    const el = commentsRef.current?.querySelector(`[data-comment-id="${focusCommentId}"]`)
+    if (!el) return
+    focusedRef.current = focusCommentId
+    el.scrollIntoView({ block: 'center' })
+    setHighlightId(focusCommentId)
+    highlightTimer.current = window.setTimeout(() => setHighlightId(null), 2000)
+  }, [focusCommentId, loadingComments, comments])
+
+  useEffect(() => () => window.clearTimeout(highlightTimer.current), [])
 
   const handlePost = async (e) => {
     e.preventDefault()
@@ -234,7 +255,7 @@ export default function RecordViewModal({
             <p className="font-body text-[11px] text-pastel-accent">내용이 없어요.</p>
           )}
 
-          <div className="border-t-2 border-pastel-border pt-3">
+          <div ref={commentsRef} className="border-t-2 border-pastel-border pt-3">
             <p className="font-title mb-2 text-[11px] text-pastel-text">댓글</p>
             {loadingComments ? (
               <p className="font-body text-[11px] text-pastel-accent">불러오는 중...</p>
@@ -247,6 +268,7 @@ export default function RecordViewModal({
                     key={c.id}
                     comment={c}
                     isMine={c.userId != null && c.userId === currentUserId}
+                    highlight={highlightId === c.id}
                     onEdit={handleEditComment}
                     onDelete={handleDeleteComment}
                   />

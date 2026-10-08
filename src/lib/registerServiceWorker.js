@@ -8,7 +8,7 @@ import { registerSW } from 'virtual:pwa-register'
 export function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return
 
-  // 알림을 탭했을 때 서비스워커가 보내는 "이 탭으로 이동" 메시지 (예: { type: 'NAVIGATE', hash: '#/todo' })
+  // 알림을 탭했을 때 서비스워커가 보내는 "이 탭으로 이동" 메시지 (예: { type: 'NAVIGATE', hash: '#/n/<알림 id>' } — 앱이 그 알림의 위치로 이동시킴)
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data?.type === 'NAVIGATE' && typeof event.data.hash === 'string') {
       window.location.hash = event.data.hash

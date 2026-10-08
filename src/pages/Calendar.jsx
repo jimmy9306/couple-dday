@@ -7,6 +7,7 @@ import {
   format,
   isSameMonth,
   isToday,
+  parseISO,
   startOfMonth,
   startOfWeek,
   subMonths,
@@ -20,6 +21,7 @@ import {
   subscribeToChanges,
 } from '../lib/store'
 import { getAnniversaryLabelForDate } from '../lib/date-utils'
+import useFocusTarget from '../lib/useFocusTarget'
 import DateRecordModal from '../components/DateRecordModal'
 import RecordViewModal from '../components/RecordViewModal'
 import PixelPanel from '../components/PixelPanel'
@@ -39,6 +41,9 @@ export default function Calendar() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState(null)
   const [loading, setLoading] = useState(true)
+  // 알림에서 넘어온 댓글 id (게시물 팝업에서 그 댓글로 스크롤 + 깜빡임)
+  const [focusCommentId, setFocusCommentId] = useState(null)
+  const { focus, consume } = useFocusTarget(['post', 'comment'])
 
   const load = async () => {
     const [rel, recs, allComments] = await Promise.all([
@@ -61,6 +66,21 @@ export default function Calendar() {
     const unsubscribe = subscribeToChanges(() => load())
     return unsubscribe
   }, [])
+
+  // 알림을 눌러 들어온 경우: 해당 월·날짜를 선택하고 게시물 팝업을 연다
+  useEffect(() => {
+    if (!focus || loading) return
+    if (focus.targetDate) {
+      setCursor(parseISO(focus.targetDate))
+      setSelectedDate(focus.targetDate)
+    }
+    const record = focus.targetId ? records.find((r) => r.id === focus.targetId) : null
+    if (record) {
+      setViewRecord(record)
+      setFocusCommentId(focus.kind === 'comment' ? focus.commentId : null)
+    }
+    consume()
+  }, [focus, loading, records, consume])
 
   const recordsByDate = useMemo(() => {
     const map = new Map()
@@ -267,8 +287,10 @@ export default function Calendar() {
           isOwner={viewRecord.userId != null && viewRecord.userId === userId}
           currentUserId={userId}
           authorName={authorName}
+          focusCommentId={focusCommentId}
           onClose={() => {
             setViewRecord(null)
+            setFocusCommentId(null)
             refresh()
           }}
           onEdit={() => openEditFromView(viewRecord)}

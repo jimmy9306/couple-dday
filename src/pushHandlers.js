@@ -31,8 +31,10 @@ export function installPushHandlers(sw) {
 
   sw.addEventListener('notificationclick', (event) => {
     event.notification.close()
-    const tab = event.notification.data && event.notification.data.tab
-    const hash = tab ? `#/${tab}` : '#/'
+    const data = event.notification.data || {}
+    // 알림 id가 있으면 앱이 알림 센터에서 누른 것과 똑같이 해당 위치(게시물/투두/책…)로 이동시킴(#/n/<id>),
+    // 없으면 해당 탭으로만 이동
+    const hash = data.id ? `#/n/${data.id}` : data.tab ? `#/${data.tab}` : '#/'
 
     event.waitUntil(
       (async () => {

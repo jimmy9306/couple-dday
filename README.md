@@ -97,3 +97,9 @@ npm run gen-icons # PWA 아이콘 재생성 (scripts/gen-icons.mjs)
 3. **설정 탭 → 알림 켜기** → 알림 허용 (iOS 16.4 이상, 홈 화면 앱에서만 가능)
 
 Edge Function(`supabase/functions/send-push`)과 VAPID 키는 이미 배포/등록돼 있어요. 비공개 키는 Supabase secrets에만 있고, 다시 배포하려면 `supabase functions deploy send-push --no-verify-jwt --use-api --project-ref <프로젝트 ref>`.
+
+## 알림 센터 (우측 상단 종 아이콘)
+
+모든 화면 우측 상단의 종을 누르면 받은 알림을 최신순으로(20개씩, 스크롤하면 더) 모아 볼 수 있고, 알림을 누르면 해당 위치(달력 게시물/댓글, 투두, 북클럽 책 팝업, 디데이 기념일)로 이동해요. 푸시 알림을 눌러 앱이 열릴 때도 같은 위치로 이동해요.
+
+- Supabase SQL Editor에서 `supabase/migration_008_notification_links.sql` 실행 (007 다음에, 여러 번 실행해도 안전 / 기존 알림 보존). 실행 전에도 종/목록은 동작하지만(옛 알림은 옛 문구로 표시, 눌러도 해당 탭으로만 이동) 새 문구·미리보기·이동 정보는 실행 후 생기는 알림부터 붙어요.

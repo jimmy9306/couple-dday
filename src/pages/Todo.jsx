@@ -3,6 +3,7 @@ import { useAuth } from '../lib/AuthContext'
 import { addTodo, deleteTodo, listTodos, subscribeToChanges, toggleTodo } from '../lib/store'
 import PixelPanel from '../components/PixelPanel'
 import ConfirmDialog from '../components/ConfirmDialog'
+import useFocusTarget from '../lib/useFocusTarget'
 import { CheckIcon, HeartIcon } from '../components/icons'
 
 export default function Todo() {
@@ -13,6 +14,9 @@ export default function Todo() {
   const [busy, setBusy] = useState(false)
   const [clearId, setClearId] = useState(null)
   const [pendingDelete, setPendingDelete] = useState(null)
+  // 알림에서 넘어온 할 일: 그 항목으로 스크롤 + 2초간 깜빡임
+  const [highlightId, setHighlightId] = useState(null)
+  const { focus, consume } = useFocusTarget(['todo_add', 'todo_done'])
 
   const load = async () => {
     setTodos(await listTodos())
@@ -24,6 +28,21 @@ export default function Todo() {
     const unsubscribe = subscribeToChanges(() => load())
     return unsubscribe
   }, [])
+
+  useEffect(() => {
+    if (!focus || loading) return
+    if (focus.targetId) setHighlightId(focus.targetId)
+    consume()
+  }, [focus, loading, consume])
+
+  useEffect(() => {
+    if (!highlightId) return undefined
+    document
+      .querySelector(`[data-todo-id="${highlightId}"]`)
+      ?.scrollIntoView({ block: 'center' })
+    const timer = window.setTimeout(() => setHighlightId(null), 2000)
+    return () => window.clearTimeout(timer)
+  }, [highlightId])
 
   const handleAdd = async (e) => {
     e.preventDefault()
@@ -93,7 +112,10 @@ export default function Todo() {
           {todos.map((todo) => (
             <div
               key={todo.id}
-              className="relative flex items-center gap-3 border-b-2 border-pastel-border px-4 py-3 last:border-b-0"
+              data-todo-id={todo.id}
+              className={`relative flex items-center gap-3 border-b-2 border-pastel-border px-4 py-3 last:border-b-0 ${
+                highlightId === todo.id ? 'notif-blink' : ''
+              }`}
             >
               <button
                 type="button"

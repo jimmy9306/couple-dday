@@ -159,3 +159,40 @@ export function GearIcon({ className }) {
   ])
   return <PixelIcon grid={grid} className={className} />
 }
+
+// 알림 센터용: 종(상단 고정 버튼) / 말풍선(댓글·한줄평)
+export function BellIcon({ className }) {
+  const grid = gridFromRows([
+    '................',
+    '.......##.......',
+    '......####......',
+    '.....######.....',
+    '....########....',
+    '....########....',
+    '...##########...',
+    '...##########...',
+    '...##########...',
+    '..############..',
+    '..############..',
+    '.##############.',
+    '................',
+    '......####......',
+    '.......##.......',
+    '................',
+  ])
+  return <PixelIcon grid={grid} className={className} />
+}
+
+export function ChatIcon({ className }) {
+  const grid = emptyGrid()
+  strokeRect(grid, 1, 2, 14, 10)
+  setCells(grid, [
+    [4, 11],
+    [4, 12],
+    [3, 13],
+    [5, 11],
+  ])
+  fillRect(grid, 4, 5, 11, 5)
+  fillRect(grid, 4, 7, 9, 7)
+  return <PixelIcon grid={grid} className={className} />
+}

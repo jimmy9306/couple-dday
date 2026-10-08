@@ -649,6 +649,154 @@ export async function listUnreadNotifications() {
     .map((n) => ({ id: n.id, tab: n.tab }))
 }
 
+const NOTIFICATION_COLUMNS =
+  'id, kind, tab, title, body, message, preview, target_id, target_date, comment_id, read, created_at'
+
+function mapNotification(row) {
+  return {
+    id: row.id,
+    kind: row.kind,
+    tab: row.tab,
+    title: row.title,
+    body: row.body,
+    message: row.message || null, // 알림 센터 문구 (migration_008 이전 알림은 null → body를 보여줌)
+    preview: row.preview || null,
+    targetId: row.target_id || null,
+    targetDate: row.target_date || null,
+    commentId: row.comment_id || null,
+    read: Boolean(row.read),
+    createdAt: row.created_at,
+  }
+}
+
+// migration_008 을 아직 안 돌렸으면 새 컬럼이 없어서 select 가 실패하므로, 그땐 옛 컬럼만 읽음
+function isColumnMissing(error) {
+  return error?.code === '42703' || error?.code === 'PGRST204' || /column .* does not exist/i.test(error?.message || '')
+}
+
+/** 알림 센터 목록: 최신순, offset부터 limit개 */
+export async function listNotifications({ offset = 0, limit = 20 } = {}) {
+  if (isSupabaseEnabled) {
+    const run = (columns) =>
+      supabase
+        .from('notifications')
+        .select(columns)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(offset, offset + limit - 1)
+    let { data, error } = await run(NOTIFICATION_COLUMNS)
+    if (error && isColumnMissing(error)) {
+      ;({ data, error } = await run('id, kind, tab, title, body, read, created_at'))
+    }
+    if (error) {
+      if (isTableMissing(error)) return []
+      throw error
+    }
+    return data.map(mapNotification)
+  }
+  return readLocal(LOCAL_KEYS.notifications, [])
+    .map((n) => ({ kind: 'post', title: '', body: '', createdAt: new Date().toISOString(), ...n }))
+    .map((n) =>
+      mapNotification({
+        ...n,
+        target_id: n.targetId,
+        target_date: n.targetDate,
+        comment_id: n.commentId,
+        created_at: n.createdAt,
+      })
+    )
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    .slice(offset, offset + limit)
+}
+
+/** 알림 하나 (푸시 알림을 눌러 열 때 id로 조회) */
+export async function getNotification(id) {
+  if (isSupabaseEnabled) {
+    let { data, error } = await supabase
+      .from('notifications')
+      .select(NOTIFICATION_COLUMNS)
+      .eq('id', id)
+      .maybeSingle()
+    if (error && isColumnMissing(error)) {
+      ;({ data, error } = await supabase
+        .from('notifications')
+        .select('id, kind, tab, title, body, read, created_at')
+        .eq('id', id)
+        .maybeSingle())
+    }
+    if (error) {
+      if (isTableMissing(error)) return null
+      throw error
+    }
+    return data ? mapNotification(data) : null
+  }
+  const found = readLocal(LOCAL_KEYS.notifications, []).find((n) => n.id === id)
+  return found
+    ? mapNotification({
+        kind: 'post',
+        title: '',
+        body: '',
+        ...found,
+        target_id: found.targetId,
+        target_date: found.targetDate,
+        comment_id: found.commentId,
+        created_at: found.createdAt,
+      })
+    : null
+}
+
+/** 알림 하나를 읽음 처리 */
+export async function markNotificationRead(id) {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id)
+    if (error && !isTableMissing(error)) throw error
+    return
+  }
+  writeLocal(
+    LOCAL_KEYS.notifications,
+    readLocal(LOCAL_KEYS.notifications, []).map((n) => (n.id === id ? { ...n, read: true } : n))
+  )
+}
+
+/** 내 안 읽은 알림을 전부 읽음 처리 ("모두 읽음") */
+export async function markAllNotificationsRead() {
+  if (isSupabaseEnabled) {
+    const { error } = await supabase.from('notifications').update({ read: true }).eq('read', false)
+    if (error && !isTableMissing(error)) throw error
+    return
+  }
+  writeLocal(
+    LOCAL_KEYS.notifications,
+    readLocal(LOCAL_KEYS.notifications, []).map((n) => ({ ...n, read: true }))
+  )
+}
+
+// 알림이 가리키는 대상(게시물/댓글/투두/책)이 아직 있는지. 이동 정보가 없는 알림(기념일, 옛 알림)은 true.
+// 확인 중 에러가 나면 이동을 막지 않도록 true.
+export async function notificationTargetExists(n) {
+  const checks = []
+  if (n.kind === 'post' && n.targetId) checks.push(['date_records', LOCAL_KEYS.records, n.targetId])
+  if (n.kind === 'comment') {
+    if (n.commentId) checks.push(['comments', LOCAL_KEYS.comments, n.commentId])
+    else if (n.targetId) checks.push(['date_records', LOCAL_KEYS.records, n.targetId])
+  }
+  if ((n.kind === 'todo_add' || n.kind === 'todo_done') && n.targetId) {
+    checks.push(['todos', LOCAL_KEYS.todos, n.targetId])
+  }
+  if ((n.kind === 'book_read' || n.kind === 'book_review') && n.targetId) {
+    checks.push(['books', LOCAL_KEYS.books, n.targetId])
+  }
+  for (const [table, localKey, id] of checks) {
+    if (isSupabaseEnabled) {
+      const { data, error } = await supabase.from(table).select('id').eq('id', id).maybeSingle()
+      if (!error && !data) return false
+    } else if (!readLocal(localKey, []).some((row) => row.id === id)) {
+      return false
+    }
+  }
+  return true
+}
+
 /** 해당 탭(dday/calendar/todo/bookclub)의 안 읽은 알림을 전부 읽음 처리 */
 export async function markNotificationsRead(tab) {
   if (isSupabaseEnabled) {

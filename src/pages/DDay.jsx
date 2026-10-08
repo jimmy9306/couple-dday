@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getRelationship, setStartDate, subscribeToChanges } from '../lib/store'
 import { getAnniversariesWithinYears, getDayCount } from '../lib/date-utils'
 import PixelPanel from '../components/PixelPanel'
+import useFocusTarget from '../lib/useFocusTarget'
 import { GiftIcon, HeartIcon } from '../components/icons'
 
 const YEARS_AHEAD = 5
@@ -59,6 +60,9 @@ export default function DDay() {
   const [next, setNext] = useState(null)
   const [upcoming, setUpcoming] = useState([])
   const [error, setError] = useState('')
+  // 알림에서 넘어온 기념일 날짜: 그 기념일로 스크롤 + 2초간 깜빡임
+  const [highlightDate, setHighlightDate] = useState(null)
+  const { focus, consume } = useFocusTarget(['anniversary'])
 
   const load = async () => {
     setError('')
@@ -85,6 +89,21 @@ export default function DDay() {
     const unsubscribe = subscribeToChanges(() => load())
     return unsubscribe
   }, [])
+
+  useEffect(() => {
+    if (!focus || loading) return
+    if (focus.targetDate) setHighlightDate(focus.targetDate)
+    consume()
+  }, [focus, loading, consume])
+
+  useEffect(() => {
+    if (!highlightDate) return undefined
+    document
+      .querySelector(`[data-ann-date="${highlightDate}"]`)
+      ?.scrollIntoView({ block: 'center' })
+    const timer = window.setTimeout(() => setHighlightDate(null), 2000)
+    return () => window.clearTimeout(timer)
+  }, [highlightDate])
 
   if (loading) {
     return <div className="font-body pt-24 text-center text-[11px] text-pastel-text">불러오는 중...</div>
@@ -134,9 +153,10 @@ export default function DDay() {
         {upcoming.map((a) => (
           <div
             key={`${a.type}-${a.n}`}
+            data-ann-date={a.dateStr}
             className={`flex items-center justify-between gap-2 border-b-2 border-pastel-border px-4 py-3 last:border-b-0 ${
               a.highlight ? 'bg-pastel-accent' : ''
-            }`}
+            } ${highlightDate === a.dateStr ? 'notif-blink' : ''}`}
           >
             <div className="flex items-center gap-2">
               {a.highlight && <HeartIcon className="h-4 w-4 flex-shrink-0 text-pastel-border" />}

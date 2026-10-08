@@ -8,6 +8,7 @@ import Calendar from './pages/Calendar'
 import Todo from './pages/Todo'
 import BookClub from './pages/BookClub'
 import Settings from './pages/Settings'
+import NotificationRedirect from './pages/NotificationRedirect'
 import PixelPanel from './components/PixelPanel'
 
 function NotAllowed() {
@@ -81,6 +82,7 @@ function AppRoutes() {
         <Route path="todo" element={<Todo />} />
         <Route path="bookclub" element={<BookClub />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="n/:id" element={<NotificationRedirect />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
