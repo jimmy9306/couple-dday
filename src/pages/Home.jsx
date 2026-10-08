@@ -163,7 +163,7 @@ export default function Home() {
         )}
       </div>
 
-      <PixelPanel innerClassName="relative overflow-hidden p-4 text-center">
+      <PixelPanel innerClassName="relative isolate overflow-hidden p-4 text-center">
         {autumn && <AutumnEffect gusting={gust.active} gustKey={gust.key} />}
         <div className="relative z-10">
           {dayCount === null ? (

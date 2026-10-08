@@ -74,7 +74,7 @@ function Leaf({ sprite, left, fall, delay, sway, spin, push, gusting }) {
 
 export default function AutumnEffect({ gusting, gustKey }) {
   return (
-    <div aria-hidden="true" className="autumn-layer pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <div aria-hidden="true" className="autumn-layer pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       {LEAVES.map((leaf, i) => (
         <Leaf key={i} {...leaf} gusting={gusting} />
       ))}

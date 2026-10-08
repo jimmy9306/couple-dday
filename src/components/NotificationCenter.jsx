@@ -136,7 +136,7 @@ function NotificationPanel({ onClose }) {
           aria-label="알림"
           className="notif-slide-in flex h-full w-full flex-col border-l-2 border-pastel-border bg-pastel-bg"
         >
-          <header className="flex items-center justify-between gap-2 border-b-2 border-pastel-border bg-pastel-box px-3 pb-2 pt-[calc(env(safe-area-inset-top)+8px)]">
+          <header className="flex items-center justify-between gap-2 border-b-2 border-pastel-border bg-pastel-box px-3 pb-3 pt-[calc(env(safe-area-inset-top)+16px)]">
             <div className="flex items-center gap-2">
               <BellIcon className="h-4 w-4 text-pastel-border" />
               <h2 className="font-title text-[14px] text-pastel-text">알림</h2>
@@ -146,17 +146,16 @@ function NotificationPanel({ onClose }) {
                 type="button"
                 onClick={markAllRead}
                 disabled={!hasUnread}
-                className="pixel-tile font-body border-2 border-pastel-border bg-pastel-accent px-2 py-1 text-[11px] text-pastel-text disabled:opacity-40"
+                className="pixel-btn font-title min-h-[44px] border-2 border-pastel-border bg-pastel-accent px-3 text-[14px] text-pastel-text disabled:opacity-40"
               >
                 모두 읽음
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="닫기"
-                className="font-title text-[14px] text-pastel-text"
+                className="pixel-btn font-title min-h-[44px] min-w-[64px] border-2 border-pastel-border bg-pastel-bg px-3 text-[14px] text-pastel-text"
               >
-                ✕
+                닫기
               </button>
             </div>
           </header>
@@ -199,19 +198,22 @@ export default function NotificationCenter() {
 
   return (
     <>
-      <div className="pointer-events-none fixed left-1/2 top-[calc(env(safe-area-inset-top)+8px)] z-40 w-full max-w-md -translate-x-1/2">
+      <div className="pointer-events-none fixed left-1/2 top-[calc(env(safe-area-inset-top)+24px)] z-40 w-full max-w-md -translate-x-1/2">
+        {/* 보이는 건 32px 픽셀 종뿐이고, 터치 영역은 48x48 */}
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label={total > 0 ? `알림 ${total}개` : '알림'}
-          className="pixel-tile pointer-events-auto absolute right-3 top-0 flex h-8 w-8 items-center justify-center border-2 border-pastel-border bg-pastel-bg"
+          className="pointer-events-auto absolute right-1 top-0 flex h-12 w-12 items-center justify-center"
         >
-          <BellIcon className="h-4 w-4 text-pastel-border" />
-          {total > 0 && (
-            <span className="font-body absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center border border-pastel-text bg-[#E5383B] px-[3px] text-[11px] leading-none text-white">
-              {total > 99 ? '99+' : total}
-            </span>
-          )}
+          <span className="relative block h-8 w-8">
+            <BellIcon className="h-8 w-8 text-pastel-border" />
+            {total > 0 && (
+              <span className="font-body absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center border border-pastel-text bg-[#E5383B] px-[3px] text-[11px] leading-none text-white">
+                {total > 99 ? '99+' : total}
+              </span>
+            )}
+          </span>
         </button>
       </div>
       {open && <NotificationPanel onClose={() => setOpen(false)} />}
