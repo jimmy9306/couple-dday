@@ -6,6 +6,8 @@ import { getDayCount, getLoveGaugeProgress } from '../lib/date-utils'
 import { EMAIL_FALLBACK_NAME, FEMALE_EMAIL, MALE_EMAIL } from '../lib/couple'
 import PixelPanel from '../components/PixelPanel'
 import CoupleSprite from '../components/CoupleSprite'
+import AutumnEffect from '../components/AutumnEffect'
+import useAutumnWind from '../lib/useAutumnWind'
 import { HeartIcon, CalendarIcon, CheckIcon, BookIcon, GearIcon } from '../components/icons'
 
 const MENU_ITEMS = [
@@ -81,7 +83,7 @@ function useBlink() {
   return blinking
 }
 
-function CoupleCharacter({ name, sprite, animationDelay }) {
+function CoupleCharacter({ name, sprite, animationDelay, windy }) {
   const blinking = useBlink()
   const [heartPopKey, setHeartPopKey] = useState(0)
 
@@ -100,7 +102,7 @@ function CoupleCharacter({ name, sprite, animationDelay }) {
         </span>
       )}
       <div className="avatar-idle" style={{ animationDelay }}>
-        <CoupleSprite name={sprite} blinking={blinking} />
+        <CoupleSprite name={sprite} blinking={blinking} windy={windy} />
       </div>
       <span className="font-body text-[11px] text-pastel-text">{name}</span>
     </button>
@@ -113,6 +115,7 @@ export default function Home() {
   const [dayCount, setDayCount] = useState(null)
   const [gauge, setGauge] = useState(null)
   const [selected, setSelected] = useState(0)
+  const { enabled: autumn, gust } = useAutumnWind()
 
   // 로컬(개발) 모드는 실제 이메일이 없어서 항상 "남성 캐릭터" 슬롯을 내 것으로 취급함.
   const myEmail = mode === 'supabase' ? user?.email : MALE_EMAIL
@@ -156,34 +159,37 @@ export default function Home() {
         )}
       </div>
 
-      <PixelPanel innerClassName="p-4 text-center">
-        {dayCount === null ? (
-          <p className="font-body text-[11px] text-pastel-text">
-            설정에서 만난 날을 먼저 입력해주세요.
-          </p>
-        ) : (
-          <>
-            <p className="font-body text-[11px] text-pastel-text">우리가 만난 지</p>
-            <p className="font-title mt-1 text-[42px] leading-none text-pastel-text">
-              {dayCount.toLocaleString()}
-              <span className="font-body ml-1 text-[14px]">일째</span>
+      <PixelPanel innerClassName="relative overflow-hidden p-4 text-center">
+        {autumn && <AutumnEffect gusting={gust.active} gustKey={gust.key} />}
+        <div className="relative z-10">
+          {dayCount === null ? (
+            <p className="font-body text-[11px] text-pastel-text">
+              설정에서 만난 날을 먼저 입력해주세요.
             </p>
+          ) : (
+            <>
+              <p className="font-body text-[11px] text-pastel-text">우리가 만난 지</p>
+              <p className="font-title mt-1 text-[42px] leading-none text-pastel-text">
+                {dayCount.toLocaleString()}
+                <span className="font-body ml-1 text-[14px]">일째</span>
+              </p>
 
-            {gauge && (
-              <div className="mt-4 flex flex-col items-center gap-2">
-                <p className="font-body text-[11px] text-pastel-text">
-                  {gauge.nextLabel}까지 D-{gauge.nextDday}
-                </p>
-                <LoveGauge progress={gauge.progress} />
-              </div>
-            )}
-          </>
-        )}
+              {gauge && (
+                <div className="mt-4 flex flex-col items-center gap-2">
+                  <p className="font-body text-[11px] text-pastel-text">
+                    {gauge.nextLabel}까지 D-{gauge.nextDday}
+                  </p>
+                  <LoveGauge progress={gauge.progress} />
+                </div>
+              )}
+            </>
+          )}
 
-        <div className="mt-5 flex items-end justify-center gap-2">
-          <CoupleCharacter name={maleName} sprite="jimin" />
-          <HeartIcon className="mb-6 h-4 w-4 flex-shrink-0 text-pastel-border" />
-          <CoupleCharacter name={femaleName} sprite="eunji" animationDelay="0.5s" />
+          <div className="mt-5 flex items-end justify-center gap-2">
+            <CoupleCharacter name={maleName} sprite="jimin" windy={gust.pose} />
+            <HeartIcon className="mb-6 h-4 w-4 flex-shrink-0 text-pastel-border" />
+            <CoupleCharacter name={femaleName} sprite="eunji" animationDelay="0.5s" windy={gust.pose} />
+          </div>
         </div>
       </PixelPanel>
 

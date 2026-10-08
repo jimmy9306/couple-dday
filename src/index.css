@@ -157,3 +157,103 @@ input[type='date'] {
 .heart-pop {
   animation: heart-pop 0.7s ease-out forwards;
 }
+
+/* ---------------------------------------------------------------------
+   가을 낙엽 + 바람 (홈 첫 박스 안에서만, 글자/캐릭터 뒤쪽)
+   --------------------------------------------------------------------- */
+.autumn-leaf-track {
+  position: absolute;
+  inset: 0;
+  animation: leaf-fall var(--fall-dur) steps(56, end) infinite;
+  animation-delay: var(--fall-delay);
+}
+
+@keyframes leaf-fall {
+  from {
+    transform: translateY(-14%);
+  }
+  to {
+    transform: translateY(104%);
+  }
+}
+
+.autumn-leaf-gust,
+.autumn-leaf-sway,
+.autumn-leaf-spin {
+  display: block;
+}
+
+.autumn-leaf-sway {
+  animation: leaf-sway var(--sway-dur) steps(6, end) infinite alternate;
+}
+
+@keyframes leaf-sway {
+  from {
+    transform: translateX(-9px);
+  }
+  to {
+    transform: translateX(9px);
+  }
+}
+
+.autumn-leaf-spin {
+  animation: leaf-spin var(--spin-dur) steps(4, end) infinite;
+}
+
+@keyframes leaf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 바람: 낙엽이 옆으로 빠르게 날아가 사라졌다가, 제자리에서 다시 나타남 */
+.autumn-leaf-gust.is-gusting {
+  animation: leaf-gust 1.3s ease-out 1;
+}
+
+@keyframes leaf-gust {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  45% {
+    transform: translateX(var(--push));
+    opacity: 1;
+  }
+  58% {
+    transform: translateX(calc(var(--push) * 1.15));
+    opacity: 0;
+  }
+  59% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.autumn-wind-line {
+  position: absolute;
+  left: 0;
+  height: 3px;
+  background: #fff;
+  opacity: 0.95;
+  animation: wind-sweep 0.9s steps(30, end) 1 both;
+}
+
+@keyframes wind-sweep {
+  from {
+    transform: translateX(-160px);
+  }
+  to {
+    transform: translateX(480px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .autumn-layer {
+    display: none;
+  }
+}

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """홈 화면 커플 캐릭터 이미지 정리 파이프라인 (Pillow + numpy).
 
-입력: scripts/characters-source.webp (은지=왼쪽, 지민=오른쪽 두 명이 한 장에 들어있는 AI 생성 "픽셀풍" 이미지)
-출력: public/characters/{jimin,eunji}.png + {jimin,eunji}-blink.png  (24x32, 투명 배경, 16색 이하)
+입력: scripts/characters-source.png (은지=왼쪽, 지민=오른쪽 두 명이 한 장에 들어있는 AI 생성 "픽셀풍" 이미지)
+출력: public/characters/{jimin,eunji}.png + -blink.png(눈 감음) + -wind.png(바람 포즈)  (24x32, 투명 배경, 16색 이하)
 
 원본은 칸 크기가 균일하지 않은(약 19~24px) 가짜 픽셀 아트라서 "격자 감지"로는 정확한 칸을 못 찾음.
 그래서 캐릭터 외곽 bbox를 정수 칸 수에 정확히 맞춰 나누고(세로 32칸 고정), 칸마다 다수결 색을 뽑는 방식으로 축소함.
@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / 'scripts' / 'characters-source.webp'
+SRC = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / 'scripts' / 'characters-source.png'
 OUT = ROOT / 'public' / 'characters'
 
 CANVAS_W, CANVAS_H = 24, 32
@@ -190,22 +190,39 @@ def detect_eyes(rgb: np.ndarray, box):
                         flank[y, xa:xb] = True
             else:
                 x += 1
-    ys, xs = np.where(flank)
-    order = np.argsort(xs)
-    blobs, cur = [], None
-    for i in order:                                    # x 기준으로 이어붙여 덩어리 만들기
-        x, y = xs[i], ys[i]
-        if cur and x - cur['x1'] <= 6:
-            cur['x1'] = max(cur['x1'], x); cur['y0'] = min(cur['y0'], y); cur['y1'] = max(cur['y1'], y); cur['n'] += 1
-        else:
-            if cur: blobs.append(cur)
-            cur = dict(x0=x, x1=x, y0=y, y1=y, n=1)
-    if cur: blobs.append(cur)
-    blobs = [b for b in blobs if b['n'] > 300]
-    blobs.sort(key=lambda b: b['x0'])
-    if len(blobs) < 4:
+    # flank 픽셀을 2D 연결(주변 3px까지 이어붙임)로 덩어리화 → 눈 크기(가로 15~45px, 세로 35~75px)만 남김
+    pad = 3
+    grown = np.zeros_like(flank)
+    for dy in range(-pad, pad + 1):
+        for dx in range(-pad, pad + 1):
+            grown |= np.roll(np.roll(flank, dy, axis=0), dx, axis=1)
+    seen = np.zeros_like(flank)
+    blobs = []
+    for sy, sx in zip(*np.where(flank)):
+        if seen[sy, sx]:
+            continue
+        stack, comp = [(sy, sx)], []
+        seen[sy, sx] = True
+        while stack:
+            cy, cx = stack.pop()
+            comp.append((cy, cx))
+            for ny, nx in ((cy + 1, cx), (cy - 1, cx), (cy, cx + 1), (cy, cx - 1),
+                           (cy + 2, cx), (cy - 2, cx), (cy, cx + 2), (cy, cx - 2)):
+                if 0 <= ny < h and 0 <= nx < w and grown[ny, nx] and not seen[ny, nx]:
+                    seen[ny, nx] = True
+                    stack.append((ny, nx))
+        cs = [c for c in comp if flank[c]]
+        if len(cs) < 300:
+            continue
+        yy = [c[0] for c in cs]; xx = [c[1] for c in cs]
+        bx0, bx1, by0, by1 = min(xx), max(xx), min(yy), max(yy)
+        if 15 <= bx1 - bx0 + 1 <= 45 and 35 <= by1 - by0 + 1 <= 75:
+            blobs.append(dict(x0=bx0, x1=bx1, y0=by0, y1=by1, n=len(cs)))
+    if len(blobs) < 2:
         raise RuntimeError(f'눈 후보를 찾지 못함: {blobs}')
-    mid = blobs[1:3] if len(blobs) == 4 else sorted(blobs, key=lambda b: abs((b['x0'] + b['x1']) / 2 - w / 2))[:2]
+    # 귀 옆 머리카락 줄기도 비슷한 크기로 잡히므로, 얼굴 한가운데에 가장 가까운 두 덩어리를 눈으로 선택
+    centre = np.mean([(b['x0'] + b['x1']) / 2 for b in blobs])
+    mid = sorted(blobs, key=lambda b: abs((b['x0'] + b['x1']) / 2 - centre))[:2]
     mid.sort(key=lambda b: b['x0'])
     return [(b['x0'] + x0, b['x1'] + 1 + x0, b['y0'] + y0, b['y1'] + 1 + y0) for b in mid]
 
@@ -254,6 +271,20 @@ def make_blink(canvas: np.ndarray, eye_cells, skin_rgb, dark_rgb, width=2):
 
 
 # ---------------------------------------------------------------------------
+# 6) 바람 프레임 — 발은 그대로 두고 윗몸(머리카락/코트 윗부분)만 오른쪽으로 1칸 밀어 휘날리는 느낌
+# ---------------------------------------------------------------------------
+WIND_SPLIT_ROW = 21
+
+
+def make_wind(canvas: np.ndarray, split_row=WIND_SPLIT_ROW, shift=1):
+    out = canvas.copy()
+    upper = canvas[:split_row]
+    out[:split_row] = 0
+    out[:split_row, shift:] = upper[:, :-shift]
+    return out
+
+
+# ---------------------------------------------------------------------------
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     rgb = np.array(Image.open(SRC).convert('RGB')).astype(np.uint8)
@@ -282,6 +313,7 @@ def main():
         blink = make_blink(canvas, canvas_eye, skin_rgb, dark_rgb_now)
         Image.fromarray(canvas, 'RGBA').save(OUT / f'{name}.png')
         Image.fromarray(blink, 'RGBA').save(OUT / f'{name}-blink.png')
+        Image.fromarray(make_wind(canvas), 'RGBA').save(OUT / f'{name}-wind.png')
         report[name] = dict(grid=f'{small.shape[1]}x{small.shape[0]}', cell=round(grid[2], 2), colors=ncolors,
                             eye_cols=canvas_eye[0], eye_rows=canvas_eye[1])
     for k, v in report.items():
