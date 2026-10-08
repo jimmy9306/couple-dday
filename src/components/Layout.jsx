@@ -18,7 +18,7 @@ function LayoutShell() {
   const { counts } = useNotifications()
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-pastel-bg pt-[calc(env(safe-area-inset-top)+40px)]">
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-pastel-bg pt-[calc(env(safe-area-inset-top)+44px)]">
       {mode === 'local' && (
         <div className="font-body border-b-2 border-pastel-border bg-pastel-accent px-4 py-1.5 text-center text-[11px] text-pastel-text">
           테스트 모드 — 이 기기에만 저장돼요 (연인과 공유 안 됨)

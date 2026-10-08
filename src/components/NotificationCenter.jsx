@@ -4,7 +4,7 @@ import { useNotifications } from '../lib/NotificationsContext'
 import useOpenNotification from '../lib/useOpenNotification'
 import { listNotifications } from '../lib/store'
 import UnreadDot from './UnreadDot'
-import { BellIcon, BookIcon, CalendarIcon, ChatIcon, CheckIcon, GiftIcon } from './icons'
+import { BellIcon, BellIcon12, BookIcon, CalendarIcon, ChatIcon, CheckIcon, GiftIcon } from './icons'
 
 const PAGE_SIZE = 20
 const LOAD_MORE_DISTANCE = 120 // 목록 맨 아래에서 이만큼(px) 남으면 다음 20개를 불러옴
@@ -198,16 +198,16 @@ export default function NotificationCenter() {
 
   return (
     <>
-      <div className="pointer-events-none fixed left-1/2 top-[calc(env(safe-area-inset-top)+24px)] z-40 w-full max-w-md -translate-x-1/2">
-        {/* 보이는 건 32px 픽셀 종뿐이고, 터치 영역은 48x48 */}
+      <div className="pointer-events-none fixed left-1/2 top-[calc(env(safe-area-inset-top)+18px)] z-40 w-full max-w-md -translate-x-1/2">
+        {/* 보이는 건 24px(12x12 아트 2배) 픽셀 종뿐이고, 터치 영역은 44x44 */}
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label={total > 0 ? `알림 ${total}개` : '알림'}
-          className="pointer-events-auto absolute right-1 top-0 flex h-12 w-12 items-center justify-center"
+          className="pointer-events-auto absolute right-1 top-0 flex h-11 w-11 items-center justify-center"
         >
-          <span className="relative block h-8 w-8">
-            <BellIcon className="h-8 w-8 text-pastel-border" />
+          <span className="relative block h-6 w-6">
+            <BellIcon12 className="h-6 w-6 text-pastel-border" />
             {total > 0 && (
               <span className="font-body absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center border border-pastel-text bg-[#E5383B] px-[3px] text-[11px] leading-none text-white">
                 {total > 99 ? '99+' : total}

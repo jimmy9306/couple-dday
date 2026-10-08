@@ -41,7 +41,7 @@ function PixelIcon({ grid, className }) {
   })
   return (
     <svg
-      viewBox={`0 0 ${SIZE} ${SIZE}`}
+      viewBox={`0 0 ${grid.length} ${grid.length}`}
       className={className}
       fill="currentColor"
       shapeRendering="crispEdges"
@@ -194,5 +194,24 @@ export function ChatIcon({ className }) {
   ])
   fillRect(grid, 4, 5, 11, 5)
   fillRect(grid, 4, 7, 9, 7)
+  return <PixelIcon grid={grid} className={className} />
+}
+
+// 상단 고정 종 버튼용 12x12 픽셀 아트 (24px = 정확히 2배로 표시해서 흐려지지 않게)
+export function BellIcon12({ className }) {
+  const grid = gridFromRows([
+    '.....##.....',
+    '....####....',
+    '...######...',
+    '...######...',
+    '..########..',
+    '..########..',
+    '..########..',
+    '.##########.',
+    '.##########.',
+    '............',
+    '....####....',
+    '.....##.....',
+  ])
   return <PixelIcon grid={grid} className={className} />
 }
