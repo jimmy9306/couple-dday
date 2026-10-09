@@ -298,3 +298,9 @@
 ## 24차 요청 (2026-10-08) — 종 아이콘 미세 조정
 
 - [x] 199. 종 12x12 픽셀 아트(`BellIcon12`)를 2배=24px로 표시(약 25% 축소, 정수배 유지), 위치 `safe-area-inset-top + 18px`(기존 아이콘보다 약 8px 위), 터치 영역 44x44, 배지는 새 크기의 오른쪽 위. 모든 화면 공통 콘텐츠 시작 위치를 +4px(`pt: safe-area + 44px`) 내려서 종 아래와 첫 박스 사이 16px 확보(390px에서 홈/디데이/달력/투두/설정 측정: 디데이·달력 16px, 나머지는 더 넓음).
+
+## 25차 요청 (2026-10-10) — 푸시가 안 오는 문제 점검/수정
+
+- [x] 200. **원인**: DB 트리거는 알림을 만들고 Edge Function도 호출했지만(`net._http_response` 14건 전부 HTTP 500 `claim failed`), 이 프로젝트는 새 테이블에 `service_role` 읽기/수정 권한이 자동으로 붙지 않아서(모든 테이블이 REFERENCES/TRIGGER/TRUNCATE뿐) 함수가 `notifications.pushed_at` 을 선점(UPDATE)하지 못하고 매번 실패 → 푸시가 한 번도 발송되지 않음. (점검 결과: 구독은 두 계정 모두 Apple 푸시 주소로 저장됨, 함수는 ACTIVE, VAPID secrets 설정됨, 트리거 7개 활성, pg_net/pg_cron 설치됨.)
+- [x] 201. **수정**: `supabase/migration_009_push_service_grants.sql`(notifications select/update, push_subscriptions select/delete 만 service_role 에 부여)을 CLI 로 직접 적용. 진단용 알림 1건을 DB에 넣어 확인 → 함수 HTTP 200 `{sent:1}` 후 진단 행 삭제.
+- [x] 202. 설정 탭 "테스트 알림 보내기"(점검용): 3초 카운트다운 후 Edge Function `send-push` 에 `{test:true}` 요청 → 로그인한 본인의 기기로만 테스트 푸시(DB 알림 행 없음, 빨간 점/숫자에 영향 없음). 결과(기기 몇 대 중 몇 대 성공/오류 코드/만료 정리)를 화면에 표시. 함수에 CORS 추가 후 재배포, 비로그인/가짜 토큰은 401 확인.

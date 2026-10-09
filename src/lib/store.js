@@ -854,6 +854,13 @@ export async function registerPushSubscription({ endpoint, p256dh, authKey, user
   if (error) throw error
 }
 
+/** 설정 탭의 디버그용: 내 기기들로 테스트 푸시를 보내고 결과({devices, sent, failed, removed})를 돌려받음 */
+export async function sendTestPush() {
+  const { data, error } = await supabase.functions.invoke('send-push', { body: { test: true } })
+  if (error) throw error
+  return data
+}
+
 export async function deletePushSubscription(endpoint) {
   const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint)
   if (error) throw error

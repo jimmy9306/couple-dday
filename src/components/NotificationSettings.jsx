@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/AuthContext'
-import { getDisabledNotificationKinds, saveDisabledNotificationKinds } from '../lib/store'
+import { getDisabledNotificationKinds, saveDisabledNotificationKinds, sendTestPush } from '../lib/store'
 import { disablePush, enablePush, getPushStatus } from '../lib/push'
 import PixelPanel from './PixelPanel'
 import { CheckIcon } from './icons'
@@ -31,6 +31,10 @@ export default function NotificationSettings() {
   const [error, setError] = useState('')
   const [disabledKinds, setDisabledKinds] = useState([])
   const [kindError, setKindError] = useState('')
+  // 디버그용 테스트 알림: 3초 카운트다운 뒤 발송
+  const [testCountdown, setTestCountdown] = useState(0)
+  const [testSending, setTestSending] = useState(false)
+  const [testResult, setTestResult] = useState('')
 
   useEffect(() => {
     getPushStatus().then(setStatus)
@@ -67,6 +71,36 @@ export default function NotificationSettings() {
     } finally {
       setStatus(await getPushStatus())
       setBusy(false)
+    }
+  }
+
+  const handleTestPush = async () => {
+    if (testCountdown > 0 || testSending) return
+    setTestResult('')
+    for (let left = 3; left > 0; left -= 1) {
+      setTestCountdown(left)
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => window.setTimeout(resolve, 1000))
+    }
+    setTestCountdown(0)
+    setTestSending(true)
+    try {
+      const r = await sendTestPush()
+      if (r.devices === 0) {
+        setTestResult('이 계정에 등록된 기기가 없어요. "알림 켜기"를 먼저 눌러주세요.')
+      } else if (r.sent > 0) {
+        setTestResult(
+          `테스트 알림을 보냈어요 (기기 ${r.devices}대 중 ${r.sent}대 성공). 앱을 닫거나 다른 화면으로 나가 있으면 잘 보여요. 안 오면 아이폰 설정 → 알림을 확인해주세요.`
+        )
+      } else if (r.removed > 0) {
+        setTestResult('이 기기의 알림 등록이 만료돼서 정리했어요. "알림 끄기" 후 "알림 켜기"를 다시 눌러주세요.')
+      } else {
+        setTestResult(`발송에 실패했어요 (오류 코드: ${r.failed.join(', ') || '알 수 없음'}).`)
+      }
+    } catch (err) {
+      setTestResult(`테스트 알림 요청에 실패했어요: ${err?.message || '알 수 없는 오류'}`)
+    } finally {
+      setTestSending(false)
     }
   }
 
@@ -133,6 +167,27 @@ export default function NotificationSettings() {
           )}
         </>
       )}
+
+      <div className="mt-4 border-t-2 border-pastel-border pt-3">
+        <button
+          type="button"
+          onClick={handleTestPush}
+          disabled={testCountdown > 0 || testSending || !on}
+          className="pixel-btn font-title w-full border-2 border-pastel-border bg-pastel-bg py-2 text-[14px] text-pastel-text disabled:opacity-50"
+        >
+          {testCountdown > 0
+            ? `${testCountdown}초 뒤 발송...`
+            : testSending
+              ? '보내는 중...'
+              : '테스트 알림 보내기'}
+        </button>
+        <p className="font-body mt-2 text-[11px] text-pastel-accent">
+          {on
+            ? '누르면 3초 뒤 나에게 테스트 푸시가 와요 (점검용).'
+            : '알림을 켠 뒤에 쓸 수 있어요 (점검용).'}
+        </p>
+        {testResult && <p className="font-body mt-1 text-[11px] text-pastel-border">{testResult}</p>}
+      </div>
 
       <div className="mt-4 border-t-2 border-pastel-border pt-3">
         <p className="font-title mb-1 text-[11px] text-pastel-text">받을 알림 종류</p>
