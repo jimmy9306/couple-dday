@@ -252,8 +252,63 @@ input[type='date'] {
   }
 }
 
+/* ---------------------------------------------------------------------
+   겨울 눈 (홈 첫 박스 안, 글자/캐릭터 뒤). 낙엽과 같은 방식: 떨어짐 > 바람 쓸림 > 좌우 흔들림 3겹
+   --------------------------------------------------------------------- */
+.snow-flake-track {
+  position: absolute;
+  inset: 0;
+  animation: snow-fall var(--fall-dur) steps(90, end) infinite;
+  animation-delay: var(--fall-delay);
+}
+
+@keyframes snow-fall {
+  from {
+    transform: translateY(-6%);
+  }
+  to {
+    transform: translateY(104%);
+  }
+}
+
+.snow-flake-gust,
+.snow-flake-sway {
+  display: block;
+}
+
+.snow-flake-sway {
+  animation: snow-sway var(--sway-dur) steps(8, end) infinite alternate;
+}
+
+@keyframes snow-sway {
+  from {
+    transform: translateX(calc(var(--sway-px) * -1));
+  }
+  to {
+    transform: translateX(var(--sway-px));
+  }
+}
+
+/* 바람: 눈이 살짝 옆(오른쪽)으로 쓸렸다가 제자리로 돌아옴 */
+.snow-flake-gust.is-gusting {
+  animation: snow-gust 1.3s steps(10, end) 1;
+}
+
+@keyframes snow-gust {
+  0% {
+    transform: translateX(0);
+  }
+  45% {
+    transform: translateX(var(--push));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .autumn-layer {
+  .autumn-layer,
+  .snow-layer {
     display: none;
   }
 }

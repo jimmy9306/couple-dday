@@ -326,3 +326,9 @@
 ## 26. 푸시 실패 원인 — service_role 테이블 권한 / 테스트 푸시는 DB 행 없이
 - 이 프로젝트에서는 SQL로 만든 테이블에 anon/authenticated/service_role 권한이 자동으로 붙지 않음. 앱(authenticated)은 마이그레이션에서 명시적으로 GRANT 했지만 Edge Function(service_role)용 GRANT 를 빠뜨려서 푸시가 전부 500으로 실패했음(migration_009). **새 테이블을 Edge Function 이 읽거나 쓰면 service_role GRANT 를 꼭 함께 추가할 것.**
 - 테스트 푸시(`{test:true}`)는 알림 행을 만들지 않고 호출자 본인의 기기로만 고정 문구를 보냄 — 알림 센터/배지/빨간 점을 오염시키지 않고, 함수가 JWT 검증 없이 배포돼 있어도 남의 기기로는 못 보내도록 함수 안에서 사용자 토큰을 직접 확인(`auth.getUser`).
+
+## 27. 계절 테마 — 설정 한 파일 + 새해 캐릭터는 대체 이미지로 먼저 적용
+- 계절 기간/캐릭터/효과는 `src/lib/seasonConfig.js` 한 곳. 한국 시간 기준이라 해외/시차가 있는 기기에서도 같은 날 바뀜. 위에서부터 처음 맞는 항목이 적용되고 어디에도 안 맞으면 기본(가을 캐릭터, 효과 없음).
+- 새해(1월) 세트는 이미지가 없어서 `ready:false` + `fallback:'winter'`로 크리스마스 캐릭터를 쓰고, 이미지를 `public/characters/newyear/`에 넣은 뒤 `ready`만 true로 바꾸면 됨(가을/겨울과 같은 파일명 규칙: jimin/eunji + -blink/-wind).
+- "동작 줄이기"는 눈/낙엽 효과만 끔(캐릭터 이미지는 계절을 따름). 겨울 캐릭터도 눈 깜빡임/바람 포즈 프레임을 가져서 가을과 같은 동작을 함.
+- 눈 효과는 낙엽과 같은 구조(홈 첫 박스 `isolate` + 레이어 `-z-10`)이고 눈송이는 15개 고정, 외곽선(#F4A9C6)과 바닥 눈은 코드의 상수라 색/모양을 바꾸려면 `SnowEffect.jsx`만 수정.

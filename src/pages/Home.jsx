@@ -7,9 +7,10 @@ import { EMAIL_FALLBACK_NAME, FEMALE_EMAIL, MALE_EMAIL } from '../lib/couple'
 import PixelPanel from '../components/PixelPanel'
 import CoupleSprite from '../components/CoupleSprite'
 import AutumnEffect from '../components/AutumnEffect'
+import SnowEffect from '../components/SnowEffect'
 import UnreadDot from '../components/UnreadDot'
 import { useNotifications } from '../lib/NotificationsContext'
-import useAutumnWind from '../lib/useAutumnWind'
+import useSeasonEffect from '../lib/useSeasonEffect'
 import { HeartIcon, CalendarIcon, CheckIcon, BookIcon, GearIcon } from '../components/icons'
 
 const MENU_ITEMS = [
@@ -118,7 +119,7 @@ export default function Home() {
   const [dayCount, setDayCount] = useState(null)
   const [gauge, setGauge] = useState(null)
   const [selected, setSelected] = useState(0)
-  const { enabled: autumn, gust } = useAutumnWind()
+  const { theme, enabled: effectOn, gust } = useSeasonEffect()
   const { counts } = useNotifications()
 
   // 로컬(개발) 모드는 실제 이메일이 없어서 항상 "남성 캐릭터" 슬롯을 내 것으로 취급함.
@@ -164,7 +165,10 @@ export default function Home() {
       </div>
 
       <PixelPanel innerClassName="relative isolate overflow-hidden p-4 text-center">
-        {autumn && <AutumnEffect gusting={gust.active} gustKey={gust.key} />}
+        {effectOn && theme.effect === 'leaves' && (
+          <AutumnEffect gusting={gust.active} gustKey={gust.key} />
+        )}
+        {effectOn && theme.effect === 'snow' && <SnowEffect gusting={gust.active} />}
         <div className="relative z-10">
           {dayCount === null ? (
             <p className="font-body text-[11px] text-pastel-text">
@@ -190,9 +194,14 @@ export default function Home() {
           )}
 
           <div className="mt-5 flex items-end justify-center gap-2">
-            <CoupleCharacter name={maleName} sprite="jimin" windy={gust.pose} />
+            <CoupleCharacter name={maleName} sprite={`${theme.spriteDir}jimin`} windy={gust.pose} />
             <HeartIcon className="mb-6 h-4 w-4 flex-shrink-0 text-pastel-border" />
-            <CoupleCharacter name={femaleName} sprite="eunji" animationDelay="0.5s" windy={gust.pose} />
+            <CoupleCharacter
+              name={femaleName}
+              sprite={`${theme.spriteDir}eunji`}
+              animationDelay="0.5s"
+              windy={gust.pose}
+            />
           </div>
         </div>
       </PixelPanel>

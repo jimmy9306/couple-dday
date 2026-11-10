@@ -304,3 +304,10 @@
 - [x] 200. **원인**: DB 트리거는 알림을 만들고 Edge Function도 호출했지만(`net._http_response` 14건 전부 HTTP 500 `claim failed`), 이 프로젝트는 새 테이블에 `service_role` 읽기/수정 권한이 자동으로 붙지 않아서(모든 테이블이 REFERENCES/TRIGGER/TRUNCATE뿐) 함수가 `notifications.pushed_at` 을 선점(UPDATE)하지 못하고 매번 실패 → 푸시가 한 번도 발송되지 않음. (점검 결과: 구독은 두 계정 모두 Apple 푸시 주소로 저장됨, 함수는 ACTIVE, VAPID secrets 설정됨, 트리거 7개 활성, pg_net/pg_cron 설치됨.)
 - [x] 201. **수정**: `supabase/migration_009_push_service_grants.sql`(notifications select/update, push_subscriptions select/delete 만 service_role 에 부여)을 CLI 로 직접 적용. 진단용 알림 1건을 DB에 넣어 확인 → 함수 HTTP 200 `{sent:1}` 후 진단 행 삭제.
 - [x] 202. 설정 탭 "테스트 알림 보내기"(점검용): 3초 카운트다운 후 Edge Function `send-push` 에 `{test:true}` 요청 → 로그인한 본인의 기기로만 테스트 푸시(DB 알림 행 없음, 빨간 점/숫자에 영향 없음). 결과(기기 몇 대 중 몇 대 성공/오류 코드/만료 정리)를 화면에 표시. 함수에 CORS 추가 후 재배포, 비로그인/가짜 토큰은 401 확인.
+
+## 26차 요청 (2026-11-10) — 겨울(크리스마스) 캐릭터 + 계절 자동 전환 + 눈 효과
+
+- [x] 203. `scripts/process-winter-characters.py`(원본 `scripts/winter-source.png`) → `public/characters/winter/{jimin,eunji}{,-blink,-wind}.png`(24x32, 16색, 발은 맨 아래 행, 가을 캐릭터와 같은 규격; 가을 이미지는 그대로). 배경(체크무늬)은 **가장자리 flood fill + 무채색 조건 + 검은 외곽선 불통과**로 제거하고(니트는 아이보리라 색으로도 구분), 처리 전후 니트색 픽셀 41,263개 중 지워진 것 0개를 스크립트가 검증(지워지면 중단). 외곽선에 갇힌 체크무늬 조각 2개 제거. 축소는 가을 파이프라인 재사용 + 파란 청바지/줄무늬/사슴 무늬 같은 드문 색이 뭉개지지 않게 팔레트·칸 다수결 보강, 가장자리 빈 열은 잘라 가운데 정렬. 확대 미리보기로 니트·머플러 온전함 확인.
+- [x] 204. `src/lib/seasonConfig.js` — 계절 테마(기간/캐릭터 세트/효과)를 한 곳에 모음, **한국 시간(KST) 기준** MM-DD. 9/1~11/9 가을+낙엽, 11/10~12/31 크리스마스+눈, 1월 새해(이미지 없으면 크리스마스 캐릭터로 대체, `public/characters/newyear/` 자리 생성, `SPRITE_SETS.newyear.ready`를 true로 바꾸면 적용)+눈, 2월 크리스마스+눈, 3~8월 가을 캐릭터·효과 없음. 14개 날짜(경계/윤년/UTC↔KST) 단위 테스트 통과. 훅 `useAutumnWind` → `useSeasonEffect`로 이름 변경(+날짜가 바뀐 뒤 다시 볼 때 테마 갱신).
+- [x] 205. `SnowEffect`: 홈 첫 박스 안/글자·캐릭터 뒤/`pointer-events:none`(낙엽과 동일 레이어), 흰색 픽셀 눈송이 3종(1x1 점/2x2/3x3 십자) 동시에 15개, 옅은 분홍 1픽셀 외곽선, 천천히 좌우로 흔들리며 낙하, 바람 때 살짝 옆으로 쓸렸다 돌아옴(캐릭터 바람 포즈도 겨울 이미지로), 바닥에 눈 2줄. "동작 줄이기"면 눈/낙엽 모두 꺼짐(캐릭터는 계절 그대로).
+- [x] 206. 390px 검증: 겨울 캐릭터+눈+바닥 눈, 날짜별 전환(11/9, 11/10, 1/15, 2/10, 4/10, 10/1), 바람(눈 쓸림+캐릭터 포즈), 동작 줄이기. `npm run build` 성공.
