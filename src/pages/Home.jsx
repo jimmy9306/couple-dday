@@ -89,14 +89,13 @@ function useBlink() {
   return blinking
 }
 
-// 겨울 캐릭터(36x48 스프라이트를 72x96px로 표시, 1칸=2px)의 얼굴 기준 좌표(px, 스프라이트 왼쪽 위 기준).
-// 은지 얼굴은 지민 얼굴을 그대로 옮긴 것이라 두 캐릭터의 눈 모양/간격이 같고, 눈 높이만 지민이 1칸(2px) 아래.
+// 겨울 캐릭터(36x48 스프라이트를 72x96px로 표시, 1칸=2px)의 얼굴 기준 좌표(px, 스프라이트 왼쪽 위 기준). 얼굴은 원본 그대로.
 // nose = 루돌프 빨간 코(정확히 2x2 픽셀 = 6x6px)의 가운데: 두 눈 사이 가운데, 눈 높이보다 살짝 아래(얼굴 살색 안쪽).
-//   지민 눈 x=15·20칸/y=13~15칸 → 가운데 x=36, 은지 눈 x=16·21칸/y=12~14칸 → 가운데 x=38.
+//   지민 눈 x=15·20칸/y=13~15칸 → 가운데 x=36, 은지 눈 x=15·21칸/y=12~14칸 → 가운데 x=37.
 // mouth = 입김이 시작하는 곳: 얼굴 밖, 입 높이의 바깥쪽 옆(지민은 왼쪽, 은지는 오른쪽 — 서로 반대쪽 바깥으로 퍼짐).
 const FACE = {
   jimin: { nose: { x: 36, y: 34 }, mouth: { x: 20, y: 38, side: -1 } },
-  eunji: { nose: { x: 38, y: 31 }, mouth: { x: 56, y: 38, side: 1 } },
+  eunji: { nose: { x: 37, y: 31 }, mouth: { x: 56, y: 38, side: 1 } },
 }
 function CoupleCharacter({ name, sprite, animationDelay, windy, who, breath, nose, noseDelay }) {
   const blinking = useBlink()

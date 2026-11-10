@@ -30,10 +30,6 @@ OUT = ROOT / 'public' / 'characters' / 'winter'
 GRID_W, GRID_H = 36, 48
 EYE_ROWS = 3          # 눈 높이(칸): 36x48 격자에선 원본 눈(세로 약 55px)이 세로 약 3칸
 WIND_SPLIT_ROW = 31   # 가을(24x32)의 21행에 해당하는 위치
-EUNJI_FACE_DX = 1     # 지민 얼굴을 은지 얼굴 가운데에 맞추는 가로 이동(칸): 지민 눈 가운데 18.0 → 은지 얼굴 가운데 19.0
-
-sys.path.insert(0, str(ROOT / 'scripts'))
-import eunji_face  # noqa: E402
 
 base = SourceFileLoader('process_characters', str(ROOT / 'scripts' / 'process-characters.py')).load_module()
 base.CANVAS_W, base.CANVAS_H, base.EYE_ROWS = GRID_W, GRID_H, EYE_ROWS
@@ -234,12 +230,6 @@ def main():
         report[name] = dict(grid=f'{small.shape[1]}x{small.shape[0]}', cell=round(grid[2], 2), colors=ncolors,
                             eye_cols=canvas_eye[0], eye_rows=canvas_eye[1])
 
-    # 은지 얼굴 = 지민 얼굴 + 속눈썹 (머리카락 칸은 안 바꿈) — scripts/eunji_face.py. 가을 은지도 같은 함수로 처리(scripts/make-eunji-face-autumn.py)
-    j, e = frames['jimin'], frames['eunji']
-    new_open = eunji_face.transplant(e['open'], j['open'], e['eye_cols'], e['eye_rows'], j['eye_cols'], j['eye_rows'], EUNJI_FACE_DX)
-    new_blink = eunji_face.transplant(e['blink'], j['blink'], e['eye_cols'], e['eye_rows'], j['eye_cols'], j['eye_rows'],
-                                      EUNJI_FACE_DX, blink=True)
-    frames['eunji'].update(open=new_open, blink=new_blink)
     for name, f in frames.items():
         Image.fromarray(f['open'], 'RGBA').save(OUT / f'{name}.png')
         Image.fromarray(f['blink'], 'RGBA').save(OUT / f'{name}-blink.png')
