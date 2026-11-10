@@ -253,12 +253,14 @@ input[type='date'] {
 }
 
 /* ---------------------------------------------------------------------
-   겨울 눈 (홈 첫 박스 안, 글자/캐릭터 뒤). 낙엽과 같은 방식: 떨어짐 > 바람 쓸림 > 좌우 흔들림 3겹
+   겨울 장면 (홈 첫 박스 안, 글자/캐릭터 뒤): 눈 / 트리 LED / 십자가 빛 / 입김
    --------------------------------------------------------------------- */
+
+/* 눈: 바람 없이 천천히 떨어지며 좌우로 1칸(3px)만 살랑임 */
 .snow-flake-track {
   position: absolute;
   inset: 0;
-  animation: snow-fall var(--fall-dur) steps(90, end) infinite;
+  animation: snow-fall var(--fall-dur) steps(94, end) infinite;
   animation-delay: var(--fall-delay);
 }
 
@@ -271,44 +273,183 @@ input[type='date'] {
   }
 }
 
-.snow-flake-gust,
 .snow-flake-sway {
   display: block;
-}
-
-.snow-flake-sway {
-  animation: snow-sway var(--sway-dur) steps(8, end) infinite alternate;
+  animation: snow-sway var(--sway-dur) steps(2, end) infinite alternate;
 }
 
 @keyframes snow-sway {
   from {
-    transform: translateX(calc(var(--sway-px) * -1));
+    transform: translateX(-3px);
   }
   to {
-    transform: translateX(var(--sway-px));
+    transform: translateX(3px);
   }
 }
 
-/* 바람: 눈이 살짝 옆(오른쪽)으로 쓸렸다가 제자리로 돌아옴 */
-.snow-flake-gust.is-gusting {
-  animation: snow-gust 1.3s steps(10, end) 1;
+/* LED 전구: 1.5초 동안 천천히 켜지고 1.5초 동안 꺼짐. 3그룹이 1초씩 어긋나서 물결처럼 */
+.tree-bulb-on {
+  opacity: 0;
+  animation: tree-bulb-glow 3s ease-in-out infinite;
 }
 
-@keyframes snow-gust {
-  0% {
-    transform: translateX(0);
-  }
-  45% {
-    transform: translateX(var(--push));
-  }
+.tree-bulb-g0 {
+  animation-delay: 0s;
+}
+
+.tree-bulb-g1 {
+  animation-delay: -1s;
+}
+
+.tree-bulb-g2 {
+  animation-delay: -2s;
+}
+
+@keyframes tree-bulb-glow {
+  0%,
   100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 십자가: 7초마다 약 1초 동안 밝은 금색으로 빛나고 상하좌우로 빛줄기가 퍼졌다 사라짐 */
+.tree-cross-glow {
+  opacity: 0;
+  animation: tree-cross-glow 7s linear infinite;
+}
+
+@keyframes tree-cross-glow {
+  0% {
+    opacity: 0;
+  }
+  3%,
+  9% {
+    opacity: 1;
+  }
+  14.3%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.tree-cross-ray {
+  opacity: 0;
+}
+
+.tree-cross-ray-up {
+  animation: tree-ray-up 7s steps(5, end) infinite;
+}
+
+.tree-cross-ray-down {
+  animation: tree-ray-down 7s steps(5, end) infinite;
+}
+
+.tree-cross-ray-left {
+  animation: tree-ray-left 7s steps(5, end) infinite;
+}
+
+.tree-cross-ray-right {
+  animation: tree-ray-right 7s steps(5, end) infinite;
+}
+
+@keyframes tree-ray-up {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  3% {
+    opacity: 1;
+  }
+  14.3%,
+  100% {
+    opacity: 0;
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes tree-ray-down {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  3% {
+    opacity: 1;
+  }
+  14.3%,
+  100% {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+}
+
+@keyframes tree-ray-left {
+  0% {
+    opacity: 0;
     transform: translateX(0);
+  }
+  3% {
+    opacity: 1;
+  }
+  14.3%,
+  100% {
+    opacity: 0;
+    transform: translateX(-9px);
+  }
+}
+
+@keyframes tree-ray-right {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  3% {
+    opacity: 1;
+  }
+  14.3%,
+  100% {
+    opacity: 0;
+    transform: translateX(9px);
+  }
+}
+
+/* 입김: 입에서 나와 위로 퍼지며(커지며) 1.5초 동안 사라짐 (6단계 끊김 = 픽셀 느낌) */
+.breath-puff {
+  animation: breath-rise 1.5s steps(6, end) both;
+}
+
+@keyframes breath-rise {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(0.8);
+  }
+  to {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(1.5);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .autumn-layer,
-  .snow-layer {
+  .autumn-layer {
+    display: none;
+  }
+  /* 겨울 장면은 정지 상태로 그대로 보이게: 눈은 멈춘 자리에, 전구는 켜진 모습으로, 십자가는 평상시 금색 */
+  .snow-flake-track {
+    animation: none;
+    transform: translateY(var(--static-y));
+  }
+  .snow-flake-sway,
+  .tree-bulb-on,
+  .tree-cross-glow,
+  .tree-cross-ray {
+    animation: none;
+  }
+  .tree-bulb-on {
+    opacity: 0.85;
+  }
+  .breath-wrap {
     display: none;
   }
 }

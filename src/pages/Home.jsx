@@ -8,6 +8,7 @@ import PixelPanel from '../components/PixelPanel'
 import CoupleSprite from '../components/CoupleSprite'
 import AutumnEffect from '../components/AutumnEffect'
 import SnowEffect from '../components/SnowEffect'
+import Breath from '../components/Breath'
 import UnreadDot from '../components/UnreadDot'
 import { useNotifications } from '../lib/NotificationsContext'
 import useSeasonEffect from '../lib/useSeasonEffect'
@@ -87,7 +88,10 @@ function useBlink() {
   return blinking
 }
 
-function CoupleCharacter({ name, sprite, animationDelay, windy }) {
+// 겨울 입김이 나오는 입 위치(px, 스프라이트 72x96 왼쪽 위 기준): 눈 아래 마지막 살색 줄(머플러 바로 위)의 가운데
+const MOUTH = { jimin: { x: 34.5, y: 34.5 }, eunji: { x: 36, y: 34.5 } }
+
+function CoupleCharacter({ name, sprite, animationDelay, windy, who, breath }) {
   const blinking = useBlink()
   const [heartPopKey, setHeartPopKey] = useState(0)
 
@@ -105,8 +109,10 @@ function CoupleCharacter({ name, sprite, animationDelay, windy }) {
           <HeartIcon className="h-4 w-4 text-pastel-border" />
         </span>
       )}
-      <div className="avatar-idle" style={{ animationDelay }}>
+      <div className="avatar-idle relative" style={{ animationDelay }}>
         <CoupleSprite name={sprite} blinking={blinking} windy={windy} />
+        {/* 입김은 입에서 얼굴 위로 퍼지므로 캐릭터 이미지 바로 위에 겹쳐 그림(이름/글자 아래쪽은 건드리지 않음) */}
+        <Breath trigger={breath} x={MOUTH[who].x} y={MOUTH[who].y} />
       </div>
       <span className="font-body text-[11px] text-pastel-text">{name}</span>
     </button>
@@ -119,7 +125,7 @@ export default function Home() {
   const [dayCount, setDayCount] = useState(null)
   const [gauge, setGauge] = useState(null)
   const [selected, setSelected] = useState(0)
-  const { theme, enabled: effectOn, gust } = useSeasonEffect()
+  const { theme, enabled: effectOn, gust, breath } = useSeasonEffect()
   const { counts } = useNotifications()
 
   // 로컬(개발) 모드는 실제 이메일이 없어서 항상 "남성 캐릭터" 슬롯을 내 것으로 취급함.
@@ -168,7 +174,7 @@ export default function Home() {
         {effectOn && theme.effect === 'leaves' && (
           <AutumnEffect gusting={gust.active} gustKey={gust.key} />
         )}
-        {effectOn && theme.effect === 'snow' && <SnowEffect gusting={gust.active} />}
+        {theme.effect === 'snow' && <SnowEffect tree={theme.tree} />}
         <div className="relative z-10">
           {dayCount === null ? (
             <p className="font-body text-[11px] text-pastel-text">
@@ -194,13 +200,21 @@ export default function Home() {
           )}
 
           <div className="mt-5 flex items-end justify-center gap-2">
-            <CoupleCharacter name={maleName} sprite={`${theme.spriteDir}jimin`} windy={gust.pose} />
+            <CoupleCharacter
+              name={maleName}
+              sprite={`${theme.spriteDir}jimin`}
+              windy={gust.pose}
+              who="jimin"
+              breath={breath.jimin}
+            />
             <HeartIcon className="mb-6 h-4 w-4 flex-shrink-0 text-pastel-border" />
             <CoupleCharacter
               name={femaleName}
               sprite={`${theme.spriteDir}eunji`}
               animationDelay="0.5s"
               windy={gust.pose}
+              who="eunji"
+              breath={breath.eunji}
             />
           </div>
         </div>
