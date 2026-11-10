@@ -105,9 +105,11 @@ function SnowFloor() {
 const STABLE_LEFT = 14
 const STABLE_APEX = 26.5 // 마구간 지붕 꼭대기 칸 가운데(stable.png 맨 윗줄은 25~28열)
 const STAR_SIZE = 33 // 별 11칸 x 3px
-const STAR_GAP = 24 // 별 아래 끝 ~ 마구간 지붕 꼭대기 간격(px, 요청: 최소 20px)
-const STAR_RAY = 18 // 별 아래 빛줄기 길이(px): 지붕 위 3px 앞에서 끝남
-const STAR_LEFT = Math.round(STABLE_LEFT + STABLE_APEX * 2 - STAR_SIZE / 2) // 별 가운데가 지붕 꼭대기 바로 위
+// 별은 박스 왼쪽 위 하늘, "397일째" 숫자와 같은 높이(숫자 글자 y≈42~76px)에 두고, 가로는 지붕 꼭대기 위(x≈67)라서
+// 디데이 글자(x≥118) 왼쪽 여백 안에 들어감. 별~마구간 사이는 점선 빛줄기가 이어짐(길이는 위치로 자동 계산).
+const STAR_TOP = 43
+const STAR_LEFT = Math.round(STABLE_LEFT + STABLE_APEX * 2 - STAR_SIZE / 2)
+const RAY_GAP = 3 // 별 아래 끝/마구간 지붕 꼭대기와 빛줄기 사이 간격(px)
 
 export default function SnowEffect({ tree = false, stable = false, star = false }) {
   return (
@@ -116,12 +118,20 @@ export default function SnowEffect({ tree = false, stable = false, star = false 
       {stable && <Stable left={STABLE_LEFT} bottom={FEET_BOTTOM} />}
       {tree && <ChristmasTree bottom={FEET_BOTTOM} />}
       {star && (
-        <div
-          className="absolute"
-          style={{ left: STAR_LEFT, bottom: FEET_BOTTOM + STABLE_HEIGHT + STAR_GAP, width: STAR_SIZE, height: STAR_SIZE }}
-        >
-          <BethlehemStar left={0} top={0} rayLength={STAR_RAY} />
-        </div>
+        <>
+          {/* 별에서 마구간 지붕으로 내려오는 1칸 폭 점선 빛줄기(위에서 아래로 그려짐) */}
+          <span
+            className="bethlehem-star-ray absolute"
+            style={{
+              left: STAR_LEFT + Math.floor(STAR_SIZE / 2) - 1,
+              top: STAR_TOP + STAR_SIZE + RAY_GAP,
+              bottom: FEET_BOTTOM + STABLE_HEIGHT + RAY_GAP,
+              width: PX,
+              backgroundImage: `repeating-linear-gradient(180deg, #FFF3B0 0 ${PX}px, transparent ${PX}px ${PX * 2}px)`,
+            }}
+          />
+          <BethlehemStar left={STAR_LEFT} top={STAR_TOP} />
+        </>
       )}
       {SNOWFLAKES.map((flake, i) => (
         <Snowflake key={i} {...flake} />

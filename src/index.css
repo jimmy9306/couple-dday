@@ -315,21 +315,23 @@ input[type='date'] {
   }
 }
 
-/* 십자가: 7초마다 약 1초 동안 밝은 금색으로 빛나고 상하좌우로 빛줄기가 퍼졌다 사라짐 */
+/* 십자가 + 베들레헴의 별: 3.5초마다 약 1초(0~1.0초) 동안 밝은 금색으로 빛남. 십자가/별/빛줄기/구유 발광은 전부
+   같은 3.5초 주기·같은 시작 시점이라 항상 같은 타이밍에 이어짐:
+   0초 별·십자가 발광 → 0.1~0.5초 별에서 마구간으로 빛줄기가 내려옴 → 0.8초(0.3초 뒤) 구유 발광 → 구유는 1초에 걸쳐 천천히 원래대로 */
 .tree-cross-glow {
   opacity: 0;
-  animation: tree-cross-glow 7s linear infinite;
+  animation: tree-cross-glow 3.5s linear infinite;
 }
 
 @keyframes tree-cross-glow {
   0% {
     opacity: 0;
   }
-  3%,
-  9% {
+  6%,
+  22% {
     opacity: 1;
   }
-  14.3%,
+  28.6%,
   100% {
     opacity: 0;
   }
@@ -340,19 +342,19 @@ input[type='date'] {
 }
 
 .tree-cross-ray-up {
-  animation: tree-ray-up 7s steps(5, end) infinite;
+  animation: tree-ray-up 3.5s steps(5, end) infinite;
 }
 
 .tree-cross-ray-down {
-  animation: tree-ray-down 7s steps(5, end) infinite;
+  animation: tree-ray-down 3.5s steps(5, end) infinite;
 }
 
 .tree-cross-ray-left {
-  animation: tree-ray-left 7s steps(5, end) infinite;
+  animation: tree-ray-left 3.5s steps(5, end) infinite;
 }
 
 .tree-cross-ray-right {
-  animation: tree-ray-right 7s steps(5, end) infinite;
+  animation: tree-ray-right 3.5s steps(5, end) infinite;
 }
 
 @keyframes tree-ray-up {
@@ -360,10 +362,10 @@ input[type='date'] {
     opacity: 0;
     transform: translateY(0);
   }
-  3% {
+  6% {
     opacity: 1;
   }
-  14.3%,
+  28.6%,
   100% {
     opacity: 0;
     transform: translateY(-9px);
@@ -375,10 +377,10 @@ input[type='date'] {
     opacity: 0;
     transform: translateY(0);
   }
-  3% {
+  6% {
     opacity: 1;
   }
-  14.3%,
+  28.6%,
   100% {
     opacity: 0;
     transform: translateY(9px);
@@ -390,10 +392,10 @@ input[type='date'] {
     opacity: 0;
     transform: translateX(0);
   }
-  3% {
+  6% {
     opacity: 1;
   }
-  14.3%,
+  28.6%,
   100% {
     opacity: 0;
     transform: translateX(-9px);
@@ -405,13 +407,66 @@ input[type='date'] {
     opacity: 0;
     transform: translateX(0);
   }
-  3% {
+  6% {
     opacity: 1;
   }
-  14.3%,
+  28.6%,
   100% {
     opacity: 0;
     transform: translateX(9px);
+  }
+}
+
+/* 별에서 마구간 지붕으로: 0.1초에 시작해 0.5초까지 위에서 아래로 그려지고, 0.7초까지 유지, 1.0초에 사라짐 */
+.bethlehem-star-ray {
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  animation: bethlehem-ray 3.5s steps(1, end) infinite;
+}
+
+@keyframes bethlehem-ray {
+  0%,
+  2.8% {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+  2.9% {
+    opacity: 1;
+    clip-path: inset(0 0 100% 0);
+    animation-timing-function: steps(10, end);
+  }
+  14.3% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+  20% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+  28.6%,
+  100% {
+    opacity: 0;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* 구유 발광: 빛줄기가 도착(0.5초)한 0.3초 뒤인 0.8초에 시작 → 0.95초에 가장 밝고 → 1.95초까지 1초 동안 천천히 원래대로 */
+.stable-cradle {
+  opacity: 0;
+  animation: stable-cradle 3.5s linear infinite;
+}
+
+@keyframes stable-cradle {
+  0%,
+  22.8% {
+    opacity: 0;
+  }
+  27.1% {
+    opacity: 1;
+  }
+  55.7%,
+  100% {
+    opacity: 0;
   }
 }
 
@@ -462,28 +517,9 @@ input[type='date'] {
   }
 }
 
-/* 베들레헴의 별: 평소엔 옅게, 십자가가 빛나는 순간(.tree-cross-glow 와 같은 7초 주기)에 함께 밝게 + 지붕 쪽 빛줄기 */
+/* 베들레헴의 별: 평소엔 옅게(밝아지는 건 위 .tree-cross-glow 와 같은 애니메이션) */
 .bethlehem-star-base {
   opacity: 0.5;
-}
-
-.bethlehem-star-ray {
-  opacity: 0;
-  animation: bethlehem-ray 7s linear infinite;
-}
-
-@keyframes bethlehem-ray {
-  0% {
-    opacity: 0;
-  }
-  3%,
-  9% {
-    opacity: 1;
-  }
-  14.3%,
-  100% {
-    opacity: 0;
-  }
 }
 
 /* 루돌프 코: 5초마다 0.8초 동안 밝아지며 둘레에 옅은 빨간 빛 (은지는 delay 로 2.5초 어긋남) */
@@ -523,6 +559,7 @@ input[type='date'] {
   .tree-cross-ray,
   .stable-light,
   .stable-floor-glow,
+  .stable-cradle,
   .bethlehem-star-ray,
   .rudolph-nose-bright,
   .rudolph-nose-glow {
@@ -530,6 +567,12 @@ input[type='date'] {
   }
   .stable-light {
     opacity: 0.22;
+  }
+  .stable-cradle {
+    opacity: 0.22;
+  }
+  .bethlehem-star-ray {
+    opacity: 0;
   }
   .stable-floor-glow {
     opacity: 0.22;

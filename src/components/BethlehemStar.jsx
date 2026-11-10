@@ -1,6 +1,6 @@
 // 베들레헴의 큰 별(11/10~12/31): 마구간 위쪽 하늘의 금색 11x11 픽셀 별(4방향 뾰족한 빛줄기).
-// 평소엔 옅게 보이다가 트리 꼭대기 십자가가 빛나는 순간(같은 7초 주기·같은 시작 시점)에 함께 밝게 빛나고,
-// 그때 별에서 마구간 지붕 쪽으로 가는 얇은 빛줄기 한 줄이 잠깐 나타났다 사라짐. 글자 뒤 레이어, pointer-events:none.
+// 평소엔 옅게 보이다가 트리 꼭대기 십자가가 빛나는 순간(같은 3.5초 주기·같은 시작 시점)에 함께 밝게 빛나고,
+// 그때 별에서 마구간 지붕 쪽으로 가는 얇은 빛줄기 한 줄이 내려왔다 사라짐(SnowEffect). 글자 뒤 레이어, pointer-events:none.
 const PX = 3
 const SIZE = 11
 const C = 5 // 중심 칸
@@ -34,26 +34,12 @@ function StarSvg({ fill, centerFill, className }) {
   )
 }
 
-// left/top: 별 왼쪽 위(px), rayLength: 별 아래에서 마구간 지붕까지의 길이(px)
-export default function BethlehemStar({ left, top, rayLength }) {
+// left/top: 별 왼쪽 위(px). 별에서 마구간 지붕으로 내려가는 빛줄기는 길이가 별/마구간 위치에 따라 정해지므로 SnowEffect 에서 그림.
+export default function BethlehemStar({ left, top }) {
   return (
-    <div
-      className="absolute"
-      style={{ left, top, width: SIZE * PX, height: SIZE * PX }}
-    >
+    <div className="absolute" style={{ left, top, width: SIZE * PX, height: SIZE * PX }}>
       <StarSvg fill="#F2B531" centerFill="#FFE27A" className="bethlehem-star-base" />
       <StarSvg fill="#FFF0A0" centerFill="#FFFFFF" className="tree-cross-glow" />
-      {/* 별에서 마구간 지붕 쪽으로 내려가는 얇은(1칸 폭) 점선 빛줄기 */}
-      <span
-        className="bethlehem-star-ray absolute"
-        style={{
-          left: C * PX,
-          top: SIZE * PX + PX,
-          width: PX,
-          height: rayLength,
-          backgroundImage: `repeating-linear-gradient(180deg, #FFF3B0 0 ${PX}px, transparent ${PX}px ${PX * 2}px)`,
-        }}
-      />
     </div>
   )
 }

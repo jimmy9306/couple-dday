@@ -2,7 +2,14 @@
 // + 입구 오른쪽 눈 바닥에 번지는 옅은 노란 빛(캐릭터 발 근처까지 살짝 닿음).
 // 글자/캐릭터 뒤 레이어(SnowEffect 안), pointer-events:none. 입구는 오른쪽(캐릭터 쪽)을 향함.
 // 빛 칸 좌표는 scripts/process-stable.py 가 만든 stableLight.js (이미지의 빛 픽셀 위에 은은하게 겹치기만 함).
-import { STABLE_COLS, STABLE_GLOW, STABLE_ROWS } from '../lib/stableLight'
+import {
+  STABLE_COLS,
+  STABLE_CRADLE_HALO1,
+  STABLE_CRADLE_HALO2,
+  STABLE_CRADLE_STRAW,
+  STABLE_GLOW,
+  STABLE_ROWS,
+} from '../lib/stableLight'
 
 const BASE = import.meta.env.BASE_URL
 // 3배(132x108)에서 요청대로 약 70%로 줄임: 같은 44x36 이미지를 정수 2배(88x72, 약 67%)로 표시 → 픽셀이 흐려지지 않음
@@ -44,6 +51,25 @@ export default function Stable({ left, bottom }) {
       >
         {STABLE_GLOW.map(([x, y]) => (
           <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={LIGHT} />
+        ))}
+      </svg>
+      {/* 구유 발광: 별 빛줄기가 내려온 0.3초 뒤 구유 둘레(1~2칸)에 금빛이 번지고 지푸라기가 밝아졌다가 1초 동안 천천히 원래대로.
+          별/십자가와 같은 3.5초 주기·같은 시작 시점(index.css 의 stable-cradle) */}
+      <svg
+        width={STABLE_WIDTH}
+        height={STABLE_HEIGHT}
+        viewBox={`0 0 ${STABLE_COLS} ${STABLE_ROWS}`}
+        shapeRendering="crispEdges"
+        className="stable-cradle absolute left-0 top-0"
+      >
+        {STABLE_CRADLE_HALO2.map(([x, y]) => (
+          <rect key={`h2-${x}-${y}`} x={x} y={y} width="1" height="1" fill="#FFC93C" fillOpacity="0.3" />
+        ))}
+        {STABLE_CRADLE_HALO1.map(([x, y]) => (
+          <rect key={`h1-${x}-${y}`} x={x} y={y} width="1" height="1" fill="#FFD25A" fillOpacity="0.55" />
+        ))}
+        {STABLE_CRADLE_STRAW.map(([x, y]) => (
+          <rect key={`s-${x}-${y}`} x={x} y={y} width="1" height="1" fill="#FFF4B8" fillOpacity="0.85" />
         ))}
       </svg>
       {/* 눈 바닥(마구간 아래쪽 3px 위가 눈 윗면)에 번지는 빛 */}

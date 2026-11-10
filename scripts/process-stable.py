@@ -40,6 +40,43 @@ def is_glow(px: np.ndarray) -> np.ndarray:
     return (r > 215) & (g > 150) & (b < 130) & (r - b > 110)
 
 
+# 구유 위치: 마구간 입구 안쪽 가운데의 여물통(위는 연노랑 지푸라기, 아래는 갈색 몸통+다리).
+# stable.png(44x36)를 확대해 칸 좌표로 직접 확인한 범위: 지푸라기 열 21~29 / 행 22~24, 구유 전체 열 20~30 / 행 22~29.
+CRADLE_STRAW_BOX = (21, 22, 29, 24)     # x0, y0, x1, y1 (끝 포함)
+CRADLE_BOX = (20, 22, 30, 29)
+
+
+def find_cradle(img: np.ndarray):
+    r, g, b, al = (img[..., i].astype(int) for i in range(4))
+    opaque = al > 0
+    black = opaque & (r + g + b < 120)
+    brown = opaque & (r < 205) & (g < 125) & ~black
+    yellow = opaque & (r > 230) & (g > 185) & (b < 170)
+    h, w = al.shape
+    body = np.zeros((h, w), bool)
+    straw = np.zeros((h, w), bool)
+    sx0, sy0, sx1, sy1 = CRADLE_STRAW_BOX
+    cx0, cy0, cx1, cy1 = CRADLE_BOX
+    for y in range(cy0, cy1 + 1):
+        for x in range(cx0, cx1 + 1):
+            if sy0 <= y <= sy1 and sx0 <= x <= sx1 and yellow[y, x]:
+                straw[y, x] = body[y, x] = True          # 지푸라기
+            elif black[y, x] or brown[y, x]:
+                body[y, x] = True                         # 구유 몸통/테두리/다리
+    ys, xs = np.where(body)
+    halo1, halo2 = [], []
+    for y in range(max(0, ys.min() - 2), min(h, ys.max() + 3)):
+        for x in range(max(0, xs.min() - 2), min(w, xs.max() + 3)):
+            if body[y, x] or not opaque[y, x] or black[y, x]:
+                continue                                  # 구유 밖의 검은 테두리 칸은 밝히지 않음
+            d = int(np.min(np.maximum(np.abs(ys - y), np.abs(xs - x))))
+            if d == 1:
+                halo1.append([int(x), int(y)])
+            elif d == 2:
+                halo2.append([int(x), int(y)])
+    return [[int(x), int(y)] for y, x in zip(*np.where(straw))], halo1, halo2
+
+
 def main():
     rgb = np.array(Image.open(SRC).convert('RGB')).astype(np.uint8)
     like = green_screen(rgb)
@@ -63,12 +100,18 @@ def main():
     glow = is_glow(small[..., :3]) & (small[..., 3] > 0)
     print(f'stable.png {small.shape[1]}x{small.shape[0]}, 색 {ncolors}개, 칸 {grid[2]:.1f}px, 빛 칸 {int(glow.sum())}개')
     cells = [[int(x), int(y)] for y, x in zip(*np.where(glow))]
+    straw, halo1, halo2 = find_cradle(small)
+    print(f'구유: 지푸라기 {len(straw)}칸, 둘레 빛 1칸 {len(halo1)}칸 / 2칸 {len(halo2)}칸')
     LIGHT_JS.write_text(
         '// scripts/process-stable.py 가 stable.png 를 보고 자동 생성한 파일 (직접 수정하지 말고 스크립트를 다시 실행)\n'
         '// 마구간 입구 안쪽의 밝은 빛 칸 좌표 (stable.png 의 칸 좌표) — 이 위에 은은한 빛을 덧씌움\n'
         f'export const STABLE_COLS = {small.shape[1]}\n'
         f'export const STABLE_ROWS = {small.shape[0]}\n'
-        f'export const STABLE_GLOW = {json.dumps(cells, separators=(",", ":"))}\n',
+        f'export const STABLE_GLOW = {json.dumps(cells, separators=(",", ":"))}\n'
+        '// 구유(여물통): 지푸라기 칸 / 구유 둘레 1칸·2칸 빛 번짐 칸 (구유 발광에 사용)\n'
+        f'export const STABLE_CRADLE_STRAW = {json.dumps(straw, separators=(",", ":"))}\n'
+        f'export const STABLE_CRADLE_HALO1 = {json.dumps(halo1, separators=(",", ":"))}\n'
+        f'export const STABLE_CRADLE_HALO2 = {json.dumps(halo2, separators=(",", ":"))}\n',
         encoding='utf8',
     )
 
