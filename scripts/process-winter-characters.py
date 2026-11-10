@@ -2,7 +2,7 @@
 """겨울(크리스마스) 커플 캐릭터 이미지 정리 파이프라인 (Pillow + numpy).
 
 입력: scripts/winter-source.png (은지=왼쪽, 지민=오른쪽 / 배경이 투명이 아니라 회색·흰색 체크무늬가 이미지에 박혀 있음)
-출력: public/characters/winter/{jimin,eunji}.png + -blink.png(눈 감음) + -wind.png(바람 포즈)
+출력: public/characters/winter/{jimin,eunji}.png + -blink.png(눈 감음) + -wind.png(겨울엔 안 쓰여서 일반과 같음)
       (가을 캐릭터와 똑같이 24x32, 투명 배경, 16색 이하, 발은 맨 아래 행)
 
 배경 제거 주의 (니트가 흰색이라 "흰색 지우기"는 금지):
@@ -185,6 +185,41 @@ def knit_pixels(rgb: np.ndarray) -> np.ndarray:
     return (chroma >= 9) & (chroma <= 25) & (luma >= 235) & (px[..., 0] - px[..., 2] >= 9)
 
 
+# ---------------------------------------------------------------------------
+# 가을 머리 이식: 겨울 캐릭터의 머리(목 위)를 가을 캐릭터 머리로 통째로 교체 (얼굴 = 가을과 픽셀 단위로 같음)
+#   가을은 24x32(화면 3배), 겨울은 36x48(화면 2배)이라 격자가 달라서, 둘 다 화면 크기(72x96) 그대로 펼쳐서 합침
+#   → 가을 머리는 화면에서 가을과 똑같은 3px 픽셀, 겨울 몸(니트/머플러)은 지금과 똑같은 2px 픽셀. 확대/축소 없음.
+#   결과 PNG는 72x96 (화면 1px = 이미지 1px)이고 CoupleSprite 가 72x96 으로 그리므로 표시 크기는 그대로.
+# ---------------------------------------------------------------------------
+AUTUMN_DIR = ROOT / 'public' / 'characters'
+DISPLAY_W, DISPLAY_H = 72, 96
+AUTUMN_SCALE, WINTER_SCALE = 3, 2
+AUTUMN_HEAD_ROWS = 13     # 가을 0~12행 = 머리카락+얼굴+귀+턱 외곽선(목 위). 13행부터는 목/옷이라 안 씀
+HEAD_DX = 2               # 가을 캔버스의 몸 중심(34.5px)을 겨울 몸 중심(36px)에 맞추는 가로 이동(px)
+SCARF_OVERLAP = 1         # 머플러가 가을 턱 외곽선 아래쪽을 덮는 높이(px)
+
+
+def _expand(a, scale):
+    return np.repeat(np.repeat(a, scale, axis=0), scale, axis=1)
+
+
+def compose_autumn_head(winter_frame, autumn_png):
+    autumn = _expand(np.array(Image.open(autumn_png).convert('RGBA')), AUTUMN_SCALE)
+    winter = _expand(winter_frame, WINTER_SCALE)
+    out = np.zeros((DISPLAY_H, DISPLAY_W, 4), dtype=np.uint8)
+    head_h = AUTUMN_HEAD_ROWS * AUTUMN_SCALE                      # 39px
+    head = autumn[:head_h]
+    x0, x1 = max(0, HEAD_DX), min(DISPLAY_W, DISPLAY_W + HEAD_DX)
+    region = out[:head_h, x0:x1]
+    src = head[:, x0 - HEAD_DX:x1 - HEAD_DX]
+    region[src[..., 3] > 0] = src[src[..., 3] > 0]                 # 1) 가을 머리
+    body_from = head_h - SCARF_OVERLAP                             # 2) 이 줄부터 아래는 겨울 몸(머플러가 턱 아래 1px 덮음)
+    body = winter[body_from:]
+    mask = body[..., 3] > 0
+    out[body_from:][mask] = body[mask]
+    return out
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     rgb = np.array(Image.open(SRC).convert('RGB')).astype(np.uint8)
@@ -231,9 +266,12 @@ def main():
                             eye_cols=canvas_eye[0], eye_rows=canvas_eye[1])
 
     for name, f in frames.items():
-        Image.fromarray(f['open'], 'RGBA').save(OUT / f'{name}.png')
-        Image.fromarray(f['blink'], 'RGBA').save(OUT / f'{name}-blink.png')
-        Image.fromarray(base.make_wind(f['open'], split_row=WIND_SPLIT_ROW), 'RGBA').save(OUT / f'{name}-wind.png')
+        open_img = compose_autumn_head(f['open'], AUTUMN_DIR / f'{name}.png')
+        blink_img = compose_autumn_head(f['blink'], AUTUMN_DIR / f'{name}-blink.png')
+        Image.fromarray(open_img, 'RGBA').save(OUT / f'{name}.png')
+        Image.fromarray(blink_img, 'RGBA').save(OUT / f'{name}-blink.png')
+        # 겨울엔 바람 포즈를 안 쓰지만(CoupleSprite 가 3장을 항상 불러옴) 파일은 필요해서 일반 프레임과 같게 둠
+        Image.fromarray(open_img, 'RGBA').save(OUT / f'{name}-wind.png')
     for k, v in report.items():
         print(k, v)
 

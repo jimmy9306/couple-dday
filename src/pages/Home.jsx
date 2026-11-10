@@ -89,13 +89,14 @@ function useBlink() {
   return blinking
 }
 
-// 겨울 캐릭터(36x48 스프라이트를 72x96px로 표시, 1칸=2px)의 얼굴 기준 좌표(px, 스프라이트 왼쪽 위 기준). 얼굴은 원본 그대로.
-// nose = 루돌프 빨간 코(정확히 2x2 픽셀 = 6x6px)의 가운데: 두 눈 사이 가운데, 눈 높이보다 살짝 아래(얼굴 살색 안쪽).
-//   지민 눈 x=15·20칸/y=13~15칸 → 가운데 x=36, 은지 눈 x=15·21칸/y=12~14칸 → 가운데 x=37.
+// 겨울 캐릭터 얼굴 기준 좌표(px, 스프라이트 72x96 왼쪽 위 기준). 겨울 이미지의 머리는 가을 머리를 그대로 옮긴 것이라
+// (scripts/process-winter-characters.py, 가을 머리를 오른쪽으로 2px) 얼굴 픽셀이 가을과 같고 1칸 = 3px.
+// nose = 루돌프 빨간 코(정확히 2x2 픽셀 = 6x6px)의 가운데: 두 눈(가을 9·13칸 → x=29~32, 41~44px) 사이 가운데,
+//   눈 아랫줄 높이에서 한 줄 아래까지(지민 눈 y=27~33 → 코 30~36, 은지 눈 y=24~30 → 코 27~33). 입·턱은 덮지 않음.
 // mouth = 입김이 시작하는 곳: 얼굴 밖, 입 높이의 바깥쪽 옆(지민은 왼쪽, 은지는 오른쪽 — 서로 반대쪽 바깥으로 퍼짐).
 const FACE = {
-  jimin: { nose: { x: 36, y: 34 }, mouth: { x: 20, y: 38, side: -1 } },
-  eunji: { nose: { x: 37, y: 31 }, mouth: { x: 56, y: 38, side: 1 } },
+  jimin: { nose: { x: 36, y: 33 }, mouth: { x: 20, y: 38, side: -1 } },
+  eunji: { nose: { x: 36, y: 30 }, mouth: { x: 56, y: 38, side: 1 } },
 }
 function CoupleCharacter({ name, sprite, animationDelay, windy, who, breath, nose, noseDelay }) {
   const blinking = useBlink()
