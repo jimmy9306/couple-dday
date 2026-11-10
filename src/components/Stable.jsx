@@ -5,7 +5,9 @@
 import { STABLE_COLS, STABLE_GLOW, STABLE_ROWS } from '../lib/stableLight'
 
 const BASE = import.meta.env.BASE_URL
-const PX = 3
+// 3배(132x108)에서 요청대로 약 70%로 줄임: 같은 44x36 이미지를 정수 2배(88x72, 약 67%)로 표시 → 픽셀이 흐려지지 않음
+const PX = 2
+const FLOOR_BURY = 3 // 눈 윗면은 마구간 바닥(=발 높이)보다 3px 위
 export const STABLE_WIDTH = STABLE_COLS * PX
 export const STABLE_HEIGHT = STABLE_ROWS * PX
 const LIGHT = '#FFE98A'
@@ -51,7 +53,7 @@ export default function Stable({ left, bottom }) {
         viewBox={`0 0 ${STABLE_COLS} ${SPILL_ROWS.length}`}
         shapeRendering="crispEdges"
         className="stable-floor-glow absolute left-0"
-        style={{ top: STABLE_HEIGHT - PX }}
+        style={{ top: STABLE_HEIGHT - FLOOR_BURY }}
       >
         {SPILL_ROWS.map((row, i) => (
           <rect key={i} x={row.x} y={i} width={row.w} height="1" fill={LIGHT} />

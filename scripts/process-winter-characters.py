@@ -30,8 +30,10 @@ OUT = ROOT / 'public' / 'characters' / 'winter'
 GRID_W, GRID_H = 36, 48
 EYE_ROWS = 3          # 눈 높이(칸): 36x48 격자에선 원본 눈(세로 약 55px)이 세로 약 3칸
 WIND_SPLIT_ROW = 31   # 가을(24x32)의 21행에 해당하는 위치
-# 은지 눈 사이: 가을과 같은 24x32 시절 6px(2칸) → 12px(6칸 = 36x48 격자 기준). 36x48 에서 눈 사이가 5칸(10px)이라
-# 오른쪽 눈을 1칸 더 오른쪽으로 옮기면 6칸(12px)이 되면서 얼굴 한가운데(살색 x13~23의 중심)에 정확히 맞음.
+EUNJI_FACE_DX = 1     # 지민 얼굴을 은지 얼굴 가운데에 맞추는 가로 이동(칸): 지민 눈 가운데 18.0 → 은지 얼굴 가운데 19.0
+
+sys.path.insert(0, str(ROOT / 'scripts'))
+import eunji_face  # noqa: E402
 
 base = SourceFileLoader('process_characters', str(ROOT / 'scripts' / 'process-characters.py')).load_module()
 base.CANVAS_W, base.CANVAS_H, base.EYE_ROWS = GRID_W, GRID_H, EYE_ROWS
@@ -209,6 +211,7 @@ def main():
     dark_rgb = palette[np.argmin(palette.astype(int) @ np.array([0.299, 0.587, 0.114]))]
 
     report = {}
+    frames = {}
     for name, xr in chars.items():
         box = base.bbox(~bg, xr)
         box, phase_score = grid_phase_search(rgb, labels, bg, palette, box)
@@ -223,30 +226,24 @@ def main():
         eye_cols = [c - c0 for c in eye_cols]
         dark_now = small[eye_rows[0], eye_cols[0], :3].copy()
         skin_rgb = small[eye_rows[0], (eye_cols[0] + eye_cols[1]) // 2, :3].copy()
-        if name == 'eunji':
-            # 얼굴 폭·눈 크기는 지민과 비슷해서 그대로(머리카락 칸은 절대 건드리지 않음), 눈 사이만 좌우로 더 벌림.
-            # 새 눈 자리는 원래 "살색"인 칸이어야만 허용 → 머리카락/외곽선 칸이 바뀔 수 없음.
-            new_cols = [eye_cols[0], eye_cols[1] + 1]
-            for r in eye_rows:
-                for c in new_cols:
-                    if c in eye_cols:
-                        continue
-                    if not (small[r, c, 3] == 255 and (small[r, c, :3] == skin_rgb).all()):
-                        raise SystemExit(f'은지 눈 새 자리({r},{c})가 살색이 아니에요 — 머리카락을 건드리게 돼서 중단')
-                for c in eye_cols:
-                    small[r, c, :3] = skin_rgb
-                for c in new_cols:
-                    small[r, c, :3] = dark_now
-            eye_cols = new_cols
         canvas = base.to_canvas(small)
         x_off, y_off = base.to_canvas_shift(small)
         canvas_eye = ([c + x_off for c in eye_cols], [r + y_off for r in eye_rows])
         blink = base.make_blink(canvas, canvas_eye, skin_rgb, dark_now, width=2)
-        Image.fromarray(canvas, 'RGBA').save(OUT / f'{name}.png')
-        Image.fromarray(blink, 'RGBA').save(OUT / f'{name}-blink.png')
-        Image.fromarray(base.make_wind(canvas, split_row=WIND_SPLIT_ROW), 'RGBA').save(OUT / f'{name}-wind.png')
+        frames[name] = dict(open=canvas, blink=blink, eye_cols=canvas_eye[0], eye_rows=canvas_eye[1])
         report[name] = dict(grid=f'{small.shape[1]}x{small.shape[0]}', cell=round(grid[2], 2), colors=ncolors,
                             eye_cols=canvas_eye[0], eye_rows=canvas_eye[1])
+
+    # 은지 얼굴 = 지민 얼굴 + 속눈썹 (머리카락 칸은 안 바꿈) — scripts/eunji_face.py. 가을 은지도 같은 함수로 처리(scripts/make-eunji-face-autumn.py)
+    j, e = frames['jimin'], frames['eunji']
+    new_open = eunji_face.transplant(e['open'], j['open'], e['eye_cols'], e['eye_rows'], j['eye_cols'], j['eye_rows'], EUNJI_FACE_DX)
+    new_blink = eunji_face.transplant(e['blink'], j['blink'], e['eye_cols'], e['eye_rows'], j['eye_cols'], j['eye_rows'],
+                                      EUNJI_FACE_DX, blink=True)
+    frames['eunji'].update(open=new_open, blink=new_blink)
+    for name, f in frames.items():
+        Image.fromarray(f['open'], 'RGBA').save(OUT / f'{name}.png')
+        Image.fromarray(f['blink'], 'RGBA').save(OUT / f'{name}-blink.png')
+        Image.fromarray(base.make_wind(f['open'], split_row=WIND_SPLIT_ROW), 'RGBA').save(OUT / f'{name}-wind.png')
     for k, v in report.items():
         print(k, v)
 

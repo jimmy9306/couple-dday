@@ -423,11 +423,11 @@ input[type='date'] {
 @keyframes breath-rise {
   from {
     opacity: 1;
-    transform: translate(0, 0) scale(0.8);
+    transform: translate(0, 0) scale(1);
   }
   to {
     opacity: 0;
-    transform: translate(var(--dx), var(--dy)) scale(1.5);
+    transform: translate(var(--dx), var(--dy)) scale(1.6);
   }
 }
 

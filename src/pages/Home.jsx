@@ -90,15 +90,15 @@ function useBlink() {
 }
 
 // 겨울 캐릭터(36x48 스프라이트를 72x96px로 표시, 1칸=2px)의 얼굴 기준 좌표(px, 스프라이트 왼쪽 위 기준).
-// nose = 루돌프 빨간 코(2x2 픽셀 = 6x6px)의 가운데: 두 눈 사이 가운데, 눈 높이보다 살짝 아래(얼굴 살색 안쪽).
-//   지민 눈 x=15·20칸/y=13~15칸 → 가운데 x=36, 은지 눈 x=15·22칸/y=12~14칸 → 가운데 x=38 (은지 얼굴 가운데).
-// 입김은 코 바로 아래(코 아래 끝 + 2px)에서 시작.
-const FACE = { jimin: { x: 36, y: 34 }, eunji: { x: 38, y: 31 } }
-const NOSE_SIZE = 6
-// 마구간(왼쪽 끝)이 서는 장면에선 지민을 마구간 오른쪽으로 옮기고(+하트도 같이) 은지는 그대로 둠(트리와 닿지 않게)
-const STABLE_SHIFT = { jimin: 37, heart: 18 }
-
-function CoupleCharacter({ name, sprite, animationDelay, windy, who, breath, nose, noseDelay, shiftX = 0 }) {
+// 은지 얼굴은 지민 얼굴을 그대로 옮긴 것이라 두 캐릭터의 눈 모양/간격이 같고, 눈 높이만 지민이 1칸(2px) 아래.
+// nose = 루돌프 빨간 코(정확히 2x2 픽셀 = 6x6px)의 가운데: 두 눈 사이 가운데, 눈 높이보다 살짝 아래(얼굴 살색 안쪽).
+//   지민 눈 x=15·20칸/y=13~15칸 → 가운데 x=36, 은지 눈 x=16·21칸/y=12~14칸 → 가운데 x=38.
+// mouth = 입김이 시작하는 곳: 얼굴 밖, 입 높이의 바깥쪽 옆(지민은 왼쪽, 은지는 오른쪽 — 서로 반대쪽 바깥으로 퍼짐).
+const FACE = {
+  jimin: { nose: { x: 36, y: 34 }, mouth: { x: 20, y: 38, side: -1 } },
+  eunji: { nose: { x: 38, y: 31 }, mouth: { x: 56, y: 38, side: 1 } },
+}
+function CoupleCharacter({ name, sprite, animationDelay, windy, who, breath, nose, noseDelay }) {
   const blinking = useBlink()
   const [heartPopKey, setHeartPopKey] = useState(0)
 
@@ -107,7 +107,6 @@ function CoupleCharacter({ name, sprite, animationDelay, windy, who, breath, nos
       type="button"
       onClick={() => setHeartPopKey((k) => k + 1)}
       className="relative flex flex-col items-center gap-1"
-      style={shiftX ? { transform: `translateX(${shiftX}px)` } : undefined}
     >
       {heartPopKey > 0 && (
         <span
@@ -120,8 +119,8 @@ function CoupleCharacter({ name, sprite, animationDelay, windy, who, breath, nos
       <div className="avatar-idle relative" style={{ animationDelay }}>
         <CoupleSprite name={sprite} blinking={blinking} windy={windy} />
         {/* 코/입김은 얼굴 위에 겹쳐 그림(캐릭터 이미지 바로 위, 이름/글자 아래쪽은 건드리지 않음) */}
-        {nose && <RudolphNose x={FACE[who].x} y={FACE[who].y} delay={noseDelay} />}
-        <Breath trigger={breath} x={FACE[who].x} y={FACE[who].y + NOSE_SIZE / 2 + 2} />
+        {nose && <RudolphNose x={FACE[who].nose.x} y={FACE[who].nose.y} delay={noseDelay} />}
+        <Breath trigger={breath} x={FACE[who].mouth.x} y={FACE[who].mouth.y} side={FACE[who].mouth.side} />
       </div>
       <span className="font-body text-[11px] text-pastel-text">{name}</span>
     </button>
@@ -210,7 +209,8 @@ export default function Home() {
             </>
           )}
 
-          <div className="mt-5 flex items-end justify-center gap-2">
+          {/* 크리스마스 장면(마구간+별)에선 게이지와 장면 사이에 하늘 공간(별이 뜰 자리)을 두려고 박스를 위로 40px 늘림. 캐릭터 크기/위치는 그대로 */}
+          <div className={`${theme.star ? 'mt-[60px]' : 'mt-5'} flex items-end justify-center gap-2`}>
             <CoupleCharacter
               name={maleName}
               sprite={`${theme.spriteDir}jimin`}
@@ -219,14 +219,8 @@ export default function Home() {
               breath={breath.jimin}
               nose={theme.nose}
               noseDelay={0}
-              shiftX={theme.stable ? STABLE_SHIFT.jimin : 0}
             />
-            <span
-              className="flex-shrink-0"
-              style={theme.stable ? { transform: `translateX(${STABLE_SHIFT.heart}px)` } : undefined}
-            >
-              <HeartIcon className="mb-6 h-4 w-4 text-pastel-border" />
-            </span>
+            <HeartIcon className="mb-6 h-4 w-4 flex-shrink-0 text-pastel-border" />
             <CoupleCharacter
               name={femaleName}
               sprite={`${theme.spriteDir}eunji`}

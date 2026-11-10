@@ -100,9 +100,14 @@ function SnowFloor() {
 
 // 마구간은 박스 왼쪽 끝에 서고(트리가 오른쪽 끝에 서는 것과 좌우 대칭), 별은 마구간 지붕 꼭대기 위쪽 하늘에 뜸.
 // 별 위치는 바닥(FEET_BOTTOM) 기준: 마구간 지붕 꼭대기 위로 [빛줄기 길이 + 1칸 간격]만큼 띄워서 별 아래 빛줄기가 지붕에 닿음.
-const STABLE_LEFT = 2
-const STAR_LEFT = 66 // 별 왼쪽(px): 별 가운데(약 x=83)가 마구간 지붕 꼭대기 바로 위, 디데이 글자(x≥118)와는 안 겹침
-const STAR_RAY = 21 // 별 아래 빛줄기 길이(px)
+// 마구간은 지민(가운데 정렬된 캐릭터 왼쪽, 눈에 보이는 몸 x≈99~147px) 뒤쪽 왼편에 서고 약간 겹쳐도 됨(지민이 앞).
+// 캐릭터는 박스 가운데에 그대로 두고 마구간/트리가 캐릭터에 맞춰 양옆에 선다.
+const STABLE_LEFT = 14
+const STABLE_APEX = 26.5 // 마구간 지붕 꼭대기 칸 가운데(stable.png 맨 윗줄은 25~28열)
+const STAR_SIZE = 33 // 별 11칸 x 3px
+const STAR_GAP = 24 // 별 아래 끝 ~ 마구간 지붕 꼭대기 간격(px, 요청: 최소 20px)
+const STAR_RAY = 18 // 별 아래 빛줄기 길이(px): 지붕 위 3px 앞에서 끝남
+const STAR_LEFT = Math.round(STABLE_LEFT + STABLE_APEX * 2 - STAR_SIZE / 2) // 별 가운데가 지붕 꼭대기 바로 위
 
 export default function SnowEffect({ tree = false, stable = false, star = false }) {
   return (
@@ -113,7 +118,7 @@ export default function SnowEffect({ tree = false, stable = false, star = false 
       {star && (
         <div
           className="absolute"
-          style={{ left: STAR_LEFT, bottom: FEET_BOTTOM + STABLE_HEIGHT + PX + STAR_RAY }}
+          style={{ left: STAR_LEFT, bottom: FEET_BOTTOM + STABLE_HEIGHT + STAR_GAP, width: STAR_SIZE, height: STAR_SIZE }}
         >
           <BethlehemStar left={0} top={0} rayLength={STAR_RAY} />
         </div>
