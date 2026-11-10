@@ -431,6 +431,83 @@ input[type='date'] {
   }
 }
 
+/* 마구간: 입구 안쪽 빛이 3초 주기로 아주 천천히 밝아졌다 어두워짐 + 입구 오른쪽 눈 바닥의 빛 번짐도 같이 숨 쉬듯 */
+.stable-light {
+  opacity: 0;
+  animation: stable-light 3s ease-in-out infinite;
+}
+
+@keyframes stable-light {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.42;
+  }
+}
+
+.stable-floor-glow {
+  opacity: 0.14;
+  animation: stable-floor-glow 3s ease-in-out infinite;
+}
+
+@keyframes stable-floor-glow {
+  0%,
+  100% {
+    opacity: 0.14;
+  }
+  50% {
+    opacity: 0.36;
+  }
+}
+
+/* 베들레헴의 별: 평소엔 옅게, 십자가가 빛나는 순간(.tree-cross-glow 와 같은 7초 주기)에 함께 밝게 + 지붕 쪽 빛줄기 */
+.bethlehem-star-base {
+  opacity: 0.5;
+}
+
+.bethlehem-star-ray {
+  opacity: 0;
+  animation: bethlehem-ray 7s linear infinite;
+}
+
+@keyframes bethlehem-ray {
+  0% {
+    opacity: 0;
+  }
+  3%,
+  9% {
+    opacity: 1;
+  }
+  14.3%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* 루돌프 코: 5초마다 0.8초 동안 밝아지며 둘레에 옅은 빨간 빛 (은지는 delay 로 2.5초 어긋남) */
+.rudolph-nose-bright,
+.rudolph-nose-glow {
+  opacity: 0;
+  animation: rudolph-nose-glow 5s linear infinite;
+  animation-delay: var(--nose-delay, 0s);
+}
+
+@keyframes rudolph-nose-glow {
+  0% {
+    opacity: 0;
+  }
+  4%,
+  12% {
+    opacity: 1;
+  }
+  16%,
+  100% {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .autumn-layer {
     display: none;
@@ -443,8 +520,19 @@ input[type='date'] {
   .snow-flake-sway,
   .tree-bulb-on,
   .tree-cross-glow,
-  .tree-cross-ray {
+  .tree-cross-ray,
+  .stable-light,
+  .stable-floor-glow,
+  .bethlehem-star-ray,
+  .rudolph-nose-bright,
+  .rudolph-nose-glow {
     animation: none;
+  }
+  .stable-light {
+    opacity: 0.22;
+  }
+  .stable-floor-glow {
+    opacity: 0.22;
   }
   .tree-bulb-on {
     opacity: 0.85;

@@ -9,6 +9,7 @@ import CoupleSprite from '../components/CoupleSprite'
 import AutumnEffect from '../components/AutumnEffect'
 import SnowEffect from '../components/SnowEffect'
 import Breath from '../components/Breath'
+import RudolphNose from '../components/RudolphNose'
 import UnreadDot from '../components/UnreadDot'
 import { useNotifications } from '../lib/NotificationsContext'
 import useSeasonEffect from '../lib/useSeasonEffect'
@@ -88,10 +89,16 @@ function useBlink() {
   return blinking
 }
 
-// 겨울 입김이 나오는 입 위치(px, 스프라이트 72x96 왼쪽 위 기준): 눈 아래 마지막 살색 줄(머플러 바로 위)의 가운데
-const MOUTH = { jimin: { x: 34.5, y: 34.5 }, eunji: { x: 36, y: 34.5 } }
+// 겨울 캐릭터(36x48 스프라이트를 72x96px로 표시, 1칸=2px)의 얼굴 기준 좌표(px, 스프라이트 왼쪽 위 기준).
+// nose = 루돌프 빨간 코(2x2 픽셀 = 6x6px)의 가운데: 두 눈 사이 가운데, 눈 높이보다 살짝 아래(얼굴 살색 안쪽).
+//   지민 눈 x=15·20칸/y=13~15칸 → 가운데 x=36, 은지 눈 x=15·22칸/y=12~14칸 → 가운데 x=38 (은지 얼굴 가운데).
+// 입김은 코 바로 아래(코 아래 끝 + 2px)에서 시작.
+const FACE = { jimin: { x: 36, y: 34 }, eunji: { x: 38, y: 31 } }
+const NOSE_SIZE = 6
+// 마구간(왼쪽 끝)이 서는 장면에선 지민을 마구간 오른쪽으로 옮기고(+하트도 같이) 은지는 그대로 둠(트리와 닿지 않게)
+const STABLE_SHIFT = { jimin: 37, heart: 18 }
 
-function CoupleCharacter({ name, sprite, animationDelay, windy, who, breath }) {
+function CoupleCharacter({ name, sprite, animationDelay, windy, who, breath, nose, noseDelay, shiftX = 0 }) {
   const blinking = useBlink()
   const [heartPopKey, setHeartPopKey] = useState(0)
 
@@ -100,6 +107,7 @@ function CoupleCharacter({ name, sprite, animationDelay, windy, who, breath }) {
       type="button"
       onClick={() => setHeartPopKey((k) => k + 1)}
       className="relative flex flex-col items-center gap-1"
+      style={shiftX ? { transform: `translateX(${shiftX}px)` } : undefined}
     >
       {heartPopKey > 0 && (
         <span
@@ -111,8 +119,9 @@ function CoupleCharacter({ name, sprite, animationDelay, windy, who, breath }) {
       )}
       <div className="avatar-idle relative" style={{ animationDelay }}>
         <CoupleSprite name={sprite} blinking={blinking} windy={windy} />
-        {/* 입김은 입에서 얼굴 위로 퍼지므로 캐릭터 이미지 바로 위에 겹쳐 그림(이름/글자 아래쪽은 건드리지 않음) */}
-        <Breath trigger={breath} x={MOUTH[who].x} y={MOUTH[who].y} />
+        {/* 코/입김은 얼굴 위에 겹쳐 그림(캐릭터 이미지 바로 위, 이름/글자 아래쪽은 건드리지 않음) */}
+        {nose && <RudolphNose x={FACE[who].x} y={FACE[who].y} delay={noseDelay} />}
+        <Breath trigger={breath} x={FACE[who].x} y={FACE[who].y + NOSE_SIZE / 2 + 2} />
       </div>
       <span className="font-body text-[11px] text-pastel-text">{name}</span>
     </button>
@@ -174,7 +183,9 @@ export default function Home() {
         {effectOn && theme.effect === 'leaves' && (
           <AutumnEffect gusting={gust.active} gustKey={gust.key} />
         )}
-        {theme.effect === 'snow' && <SnowEffect tree={theme.tree} />}
+        {theme.effect === 'snow' && (
+          <SnowEffect tree={theme.tree} stable={theme.stable} star={theme.star} />
+        )}
         <div className="relative z-10">
           {dayCount === null ? (
             <p className="font-body text-[11px] text-pastel-text">
@@ -206,8 +217,16 @@ export default function Home() {
               windy={gust.pose}
               who="jimin"
               breath={breath.jimin}
+              nose={theme.nose}
+              noseDelay={0}
+              shiftX={theme.stable ? STABLE_SHIFT.jimin : 0}
             />
-            <HeartIcon className="mb-6 h-4 w-4 flex-shrink-0 text-pastel-border" />
+            <span
+              className="flex-shrink-0"
+              style={theme.stable ? { transform: `translateX(${STABLE_SHIFT.heart}px)` } : undefined}
+            >
+              <HeartIcon className="mb-6 h-4 w-4 text-pastel-border" />
+            </span>
             <CoupleCharacter
               name={femaleName}
               sprite={`${theme.spriteDir}eunji`}
@@ -215,6 +234,8 @@ export default function Home() {
               windy={gust.pose}
               who="eunji"
               breath={breath.eunji}
+              nose={theme.nose}
+              noseDelay={-2.5}
             />
           </div>
         </div>

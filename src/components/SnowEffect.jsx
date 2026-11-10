@@ -5,6 +5,8 @@
 // "동작 줄이기"면 CSS에서 애니메이션만 멈추고(index.css) 장면은 정지 상태로 그대로 보임.
 import { buildOutlinedShape } from '../lib/pixelShapes'
 import ChristmasTree from './ChristmasTree'
+import Stable, { STABLE_HEIGHT } from './Stable'
+import BethlehemStar from './BethlehemStar'
 
 const PX = 3 // 캐릭터와 같은 3배 확대
 
@@ -96,11 +98,26 @@ function SnowFloor() {
   )
 }
 
-export default function SnowEffect({ tree = false }) {
+// 마구간은 박스 왼쪽 끝에 서고(트리가 오른쪽 끝에 서는 것과 좌우 대칭), 별은 마구간 지붕 꼭대기 위쪽 하늘에 뜸.
+// 별 위치는 바닥(FEET_BOTTOM) 기준: 마구간 지붕 꼭대기 위로 [빛줄기 길이 + 1칸 간격]만큼 띄워서 별 아래 빛줄기가 지붕에 닿음.
+const STABLE_LEFT = 2
+const STAR_LEFT = 66 // 별 왼쪽(px): 별 가운데(약 x=83)가 마구간 지붕 꼭대기 바로 위, 디데이 글자(x≥118)와는 안 겹침
+const STAR_RAY = 21 // 별 아래 빛줄기 길이(px)
+
+export default function SnowEffect({ tree = false, stable = false, star = false }) {
   return (
     <div aria-hidden="true" className="snow-layer pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       <SnowFloor />
+      {stable && <Stable left={STABLE_LEFT} bottom={FEET_BOTTOM} />}
       {tree && <ChristmasTree bottom={FEET_BOTTOM} />}
+      {star && (
+        <div
+          className="absolute"
+          style={{ left: STAR_LEFT, bottom: FEET_BOTTOM + STABLE_HEIGHT + PX + STAR_RAY }}
+        >
+          <BethlehemStar left={0} top={0} rayLength={STAR_RAY} />
+        </div>
+      )}
       {SNOWFLAKES.map((flake, i) => (
         <Snowflake key={i} {...flake} />
       ))}

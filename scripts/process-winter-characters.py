@@ -25,7 +25,16 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = Path(sys.argv[1]) if len(sys.argv) > 1 and not sys.argv[1].startswith('--') else ROOT / 'scripts' / 'winter-source.png'
 OUT = ROOT / 'public' / 'characters' / 'winter'
 
+# 겨울 캐릭터는 가을(24x32)보다 촘촘한 36x48 격자로 만들고, 화면에서는 가을과 같은 72x96px(정확히 2배)로 보여줌.
+# (24x32에선 니트의 루돌프 무늬 — 갈색 뿔/검은 눈/빨간 코 — 가 3~4칸에 뭉개져 얼룩이 됨)
+GRID_W, GRID_H = 36, 48
+EYE_ROWS = 3          # 눈 높이(칸): 36x48 격자에선 원본 눈(세로 약 55px)이 세로 약 3칸
+WIND_SPLIT_ROW = 31   # 가을(24x32)의 21행에 해당하는 위치
+# 은지 눈 사이: 가을과 같은 24x32 시절 6px(2칸) → 12px(6칸 = 36x48 격자 기준). 36x48 에서 눈 사이가 5칸(10px)이라
+# 오른쪽 눈을 1칸 더 오른쪽으로 옮기면 6칸(12px)이 되면서 얼굴 한가운데(살색 x13~23의 중심)에 정확히 맞음.
+
 base = SourceFileLoader('process_characters', str(ROOT / 'scripts' / 'process-characters.py')).load_module()
+base.CANVAS_W, base.CANVAS_H, base.EYE_ROWS = GRID_W, GRID_H, EYE_ROWS
 
 CHECKER_MAX_CHROMA = 6     # 체크무늬는 완전 무채색(최대-최소 ≤3). 아이보리 니트는 ≥10
 CHECKER_MIN_LUMA = 190     # 체크무늬 회색(≈221)/흰색(≈253)
@@ -107,7 +116,7 @@ def weighted_palette(pixels: np.ndarray, k=24, iters=16, seed=7):
 RARE_BOOST = 0.3      # 드문 색 가중치 지수 (0이면 일반 다수결)
 
 
-def downscale_boost(labels, bg, palette, box, rows=base.CANVAS_H):
+def downscale_boost(labels, bg, palette, box, rows=GRID_H):
     x0, y0, x1, y1 = box
     freq = np.bincount(labels[~bg], minlength=len(palette)).astype(float)
     freq /= freq.sum()
@@ -127,6 +136,47 @@ def downscale_boost(labels, bg, palette, box, rows=base.CANVAS_H):
             out[r, c, :3] = palette[score.argmax()]
             out[r, c, 3] = 255
     return out, (xs, ys, cell_h)
+
+
+def is_antler_brown(px: np.ndarray) -> np.ndarray:
+    """사슴 뿔(갈색): 팔레트 번호가 아니라 색으로 판별 (R≈90~170, G≈35~95, B≈20~80, 붉은 갈색)."""
+    px = px.astype(int)
+    r, g, b = px[..., 0], px[..., 1], px[..., 2]
+    return (r > 70) & (r < 170) & (g > 30) & (g < 95) & (b > 15) & (b < 80) & (r > g + 25) & (g > b + 5)
+
+
+def components(mask: np.ndarray) -> int:
+    seen = np.zeros_like(mask)
+    n = 0
+    for sy, sx in zip(*np.where(mask)):
+        if seen[sy, sx]:
+            continue
+        n += 1
+        seen |= flood(mask & ~seen, [(sy, sx)])
+    return n
+
+
+def grid_phase_search(rgb, labels, bg, palette, box, span=9, step=1):
+    """격자 위치(위/왼쪽 시작점)를 조금씩 옮겨 보며 니트 몸통(뿔·코·줄무늬)이 원본과 가장 닮는 위상을 고름.
+    원본의 "원래 픽셀 칸"(약 13.5px)과 우리 칸(약 18px)이 안 맞아서, 칸 경계가 어디에 걸리느냐에 따라 1칸 두께 줄무늬와
+    사슴 뿔 모양이 쪼개지거나 뭉개짐. 점수 = 몸통 영역 각 칸의 색과 그 칸 안 원본 픽셀들의 색 차이 제곱합(낮을수록 원본과 같음)."""
+    x0, y0, x1, y1 = box
+    best = None
+    for dy in range(-span, span + 1, step):
+        for dx in range(-span, span + 1, step):
+            b = (x0 + dx, y0 + dy, x1, y1)
+            small, (xs, ys, _) = downscale_boost(labels, bg, palette, b)
+            h, w = small.shape[:2]
+            err = 0.0
+            for r in range(int(h * 0.40), int(h * 0.78)):
+                for c in range(int(w * 0.2), int(w * 0.8)):
+                    if small[r, c, 3] == 0:
+                        continue
+                    tile = rgb[ys[r]:ys[r + 1], xs[c]:xs[c + 1]].astype(int)
+                    err += float(((tile - small[r, c, :3].astype(int)) ** 2).sum()) / max(1, tile.shape[0] * tile.shape[1])
+            if best is None or err < best[0]:
+                best = (err, b)
+    return best[1], best[0]
 
 
 def knit_pixels(rgb: np.ndarray) -> np.ndarray:
@@ -161,6 +211,7 @@ def main():
     report = {}
     for name, xr in chars.items():
         box = base.bbox(~bg, xr)
+        box, phase_score = grid_phase_search(rgb, labels, bg, palette, box)
         small, grid = downscale_boost(labels, bg, palette, box)
         eyes_src = base.detect_eyes(rgb, box)
         eye_cols, eye_rows = base.paint_eyes(small, grid, eyes_src, dark_rgb, None)
@@ -172,13 +223,28 @@ def main():
         eye_cols = [c - c0 for c in eye_cols]
         dark_now = small[eye_rows[0], eye_cols[0], :3].copy()
         skin_rgb = small[eye_rows[0], (eye_cols[0] + eye_cols[1]) // 2, :3].copy()
+        if name == 'eunji':
+            # 얼굴 폭·눈 크기는 지민과 비슷해서 그대로(머리카락 칸은 절대 건드리지 않음), 눈 사이만 좌우로 더 벌림.
+            # 새 눈 자리는 원래 "살색"인 칸이어야만 허용 → 머리카락/외곽선 칸이 바뀔 수 없음.
+            new_cols = [eye_cols[0], eye_cols[1] + 1]
+            for r in eye_rows:
+                for c in new_cols:
+                    if c in eye_cols:
+                        continue
+                    if not (small[r, c, 3] == 255 and (small[r, c, :3] == skin_rgb).all()):
+                        raise SystemExit(f'은지 눈 새 자리({r},{c})가 살색이 아니에요 — 머리카락을 건드리게 돼서 중단')
+                for c in eye_cols:
+                    small[r, c, :3] = skin_rgb
+                for c in new_cols:
+                    small[r, c, :3] = dark_now
+            eye_cols = new_cols
         canvas = base.to_canvas(small)
         x_off, y_off = base.to_canvas_shift(small)
         canvas_eye = ([c + x_off for c in eye_cols], [r + y_off for r in eye_rows])
-        blink = base.make_blink(canvas, canvas_eye, skin_rgb, dark_now)
+        blink = base.make_blink(canvas, canvas_eye, skin_rgb, dark_now, width=2)
         Image.fromarray(canvas, 'RGBA').save(OUT / f'{name}.png')
         Image.fromarray(blink, 'RGBA').save(OUT / f'{name}-blink.png')
-        Image.fromarray(base.make_wind(canvas), 'RGBA').save(OUT / f'{name}-wind.png')
+        Image.fromarray(base.make_wind(canvas, split_row=WIND_SPLIT_ROW), 'RGBA').save(OUT / f'{name}-wind.png')
         report[name] = dict(grid=f'{small.shape[1]}x{small.shape[0]}', cell=round(grid[2], 2), colors=ncolors,
                             eye_cols=canvas_eye[0], eye_rows=canvas_eye[1])
     for k, v in report.items():
